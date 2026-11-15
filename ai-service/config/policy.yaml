@@ -1,8 +1,6 @@
 # Valeurs de départ (Annexe A du dossier). Propriétaire : É2 (chargeur, moteur).
 # Les seuils marqués TEMPORARY sont provisoires jusqu'au réglage sur la validation
 # (AS-S4-001, `python -m evaluation.tune_thresholds`) puis gel (tag thresholds-frozen).
-# Proposition de planification : `logging.db_path` (SQLite) est retiré — le service IA
-# n'écrit pas en base, le backend Spring persiste les verdicts.
 thresholds:                  # TEMPORARY
   injection_block: 0.90      # score > 0.90 -> BLOCK
   injection_review: 0.50     # 0.50 à 0.90 -> SANITIZE ou CONFIRM
@@ -19,4 +17,5 @@ output:
   on_secret_detected: SANITIZE
   on_canary_in_outgoing_tool: BLOCK
 logging:
+  db_path: agentshield.db     # conservé tel qu'en Annexe A ; le service IA n'écrit pas en base (Spring persiste)
   mask_excerpts: true
