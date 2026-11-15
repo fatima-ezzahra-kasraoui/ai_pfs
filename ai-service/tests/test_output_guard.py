@@ -76,7 +76,7 @@ def test_key_value_secret_masked(guard):
 
 
 def test_known_token_formats(guard):
-    text = "AKIAABCDEFGHIJKLMNOP et ghp_" + "a" * 36
+    text = "AKIA" + "ABCDEFGHIJKLMNOP" + " et ghp_" + "a" * 36  # assemblé à l'exécution : pas de faux secret littéral
     v = guard.check({"text": text})
     assert v.cleaned.count("****") == 2
 

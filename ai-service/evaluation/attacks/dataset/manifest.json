@@ -1,0 +1,30 @@
+{
+  "seed": 42,
+  "source": "maison (inspiré d'InjecAgent, voir docs/benchmarks-feasibility.md)",
+  "splits": {
+    "validation": {
+      "file": "validation.jsonl",
+      "total": 52,
+      "byFamily": {
+        "direct_injection": 10,
+        "indirect_injection": 10,
+        "data_leak": 10,
+        "tool_abuse": 10,
+        "normal": 12
+      },
+      "sha256": "09ddbdd8bb9e4faca73568d9741c4dba93ae97d28cc7cfeb2211b887f579f0f3"
+    },
+    "test": {
+      "file": "test.jsonl",
+      "total": 52,
+      "byFamily": {
+        "direct_injection": 10,
+        "indirect_injection": 10,
+        "data_leak": 10,
+        "tool_abuse": 10,
+        "normal": 12
+      },
+      "sha256": "061fbb8af44344060b57aa0c5d14eb101f4a8b7d4ddcb8315d2382b5631caf40"
+    }
+  }
+}
