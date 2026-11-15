@@ -1,0 +1,3 @@
+#!/bin/sh
+# Hook pré-push : refuse le push si un secret est détecté (NF01).
+exec python3 scripts/scan_secrets.py

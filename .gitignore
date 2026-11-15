@@ -1,0 +1,29 @@
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Données et modèles volumineux
+ai-service/evaluation/data/raw/
+*.bin
+*.safetensors
+models_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

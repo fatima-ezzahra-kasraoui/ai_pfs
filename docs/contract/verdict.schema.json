@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentshield.local/contract/verdict.schema.json",
+  "title": "Verdict",
+  "description": "Résultat d'un guard (service IA -> backend). Version du contrat : v1.0.",
+  "type": "object",
+  "required": ["module", "attackType", "score", "riskLevel", "reason"],
+  "additionalProperties": false,
+  "properties": {
+    "module": { "enum": ["A", "B", "C", "D", "ENGINE"] },
+    "attackType": {
+      "enum": ["direct_injection", "indirect_injection", "data_leak", "tool_abuse", "none"]
+    },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "riskLevel": { "enum": ["low", "medium", "high"] },
+    "decision": { "enum": ["ALLOW", "SANITIZE", "CONFIRM", "BLOCK", null] },
+    "reason": { "type": "string" },
+    "correlationId": { "type": ["string", "null"] },
+    "cleaned": { "type": ["string", "null"] },
+    "degraded": { "type": "boolean" },
+    "latencyMs": { "type": "number", "minimum": 0 },
+    "metadata": { "type": "object" }
+  }
+}
