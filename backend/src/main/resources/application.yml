@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: agentshield-backend
+  profiles:
+    default: dev
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      base-path: /api/system
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+agentshield:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  ai-service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    service-key: ${AI_SERVICE_KEY:change-me-dev-only}
+    timeout-ms: 10000
