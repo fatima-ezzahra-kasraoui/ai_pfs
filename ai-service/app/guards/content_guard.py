@@ -41,7 +41,7 @@ INDIRECT_RULES: tuple[Rule, ...] = (
        r"\b(?:when|while|if|after)\s+(?:you\s+)?(?:are\s+)?(?:summar\w+|read\w*|process\w*|analy\w+)\b[^.!?\n]{0,60}\b(?:also|first|then|must|should|always)\b"
        r"|\b(?:en|lors\s+de|pendant)\s+(?:resumant|lisant|traitant|analysant|la\s+lecture|le\s+resume)\b[^.!?\n]{0,60}\b(?:aussi|d'abord|ensuite|dois|doit|dois-tu|toujours)\b"),
     _r("send_to_address", 0.60,
-       rf"\b(?:send|forward|email|mail|transfere\w*|envoie\w*|redirige\w*|transmets?|exfiltr\w+)\b[^.!?\n]{{0,70}}{_EMAIL}"),
+       rf"\b(?:send|forward|e-?mail\s+(?:it|them|this|that|these|all|me)|transfere\w*|envoie\w*|redirige\w*|transmets?|exfiltr\w+)\b[^.!?\n]{{0,70}}{_EMAIL}"),
     _r("hidden_instruction_marker", 0.45,
        r"\b(?:ignore\s+this\s+if|do\s+not\s+(?:tell|mention|inform)\s+the\s+user|ne\s+(?:dis|mentionne|informe)\s+pas\s+(?:a\s+)?l'utilisateur|sans\s+en\s+informer\s+l'utilisateur|without\s+telling\s+the\s+user)\b"),
 )

@@ -140,3 +140,13 @@ def test_aggregate_counts_false_positive_rules():
     m = aggregate(cases)
     assert m["asr"] == 0.5 and m["falseNegatives"] == ["b"] and m["falsePositives"] == ["n2"]
     assert m["taskSuccess"] == 0.5 and m["perFamily"]["data_leak"]["asr"] is None
+
+
+def test_demo_scenarios_four_attacks_succeed_unprotected_and_fail_protected():
+    from evaluation.demo_scenarios import SCENARIOS
+
+    r = SimRunner(ReferencePipeline.build(None))
+    assert len(SCENARIOS) == 4
+    for s in SCENARIOS:
+        assert r.run(s, "e1", 1)["attackSucceeded"] is True, s["id"]
+        assert r.run(s, "e3", 1)["attackSucceeded"] is False, s["id"]
