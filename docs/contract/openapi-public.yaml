@@ -1,0 +1,768 @@
+openapi: 3.1.0
+info:
+  title: AgentShield AI - API publique
+  version: 1.0.0
+  description: |
+    API REST exposee par le backend Spring Boot au frontend React (contrat `contract-v1.0`, AS-S1-003).
+
+    **Conventions**
+    - Authentification : cookie de session `HttpOnly` + `SameSite` pose par `POST /api/auth/login`.
+      Aucun jeton n'est lisible par JavaScript.
+    - CSRF : toute requete non-GET doit envoyer l'en-tete `X-XSRF-TOKEN` (valeur du cookie `XSRF-TOKEN`).
+    - Roles : `ANALYST`, `APPROVER`, `ADMIN`. Le role requis est indique par l'extension `x-roles` sur
+      **chaque** operation (liste vide = route publique). Sans session : 401. Role insuffisant : 403.
+    - Erreurs : toujours `ApiError` `{status, code, message}`, sans trace ni detail interne.
+    - Une valeur absente est `null` : le backend n'invente jamais de valeur de remplacement.
+    - Les champs sensibles (`excerpt`, `parameters`) sont masques sauf pour `ADMIN`.
+
+    **Points a valider en equipe** (marques `x-to-confirm`) : matrice role x endpoint (§17.2 du dossier),
+    format exact de la simulation (Annexe D), catalogue des scenarios.
+  license:
+    name: Usage academique
+servers:
+  - url: http://localhost:8080
+    description: Developpement local (docker compose)
+
+tags:
+  - name: auth
+  - name: dashboard
+  - name: security
+  - name: simulations
+  - name: approvals
+  - name: analytics
+  - name: audit
+  - name: system
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Ouvrir une session
+      description: Message d'erreur identique pour un compte inconnu et un mauvais mot de passe.
+      security: []
+      x-roles: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Session ouverte ; le cookie de session est pose.
+          headers:
+            Set-Cookie:
+              description: Cookie de session `HttpOnly; SameSite=Strict`.
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionUser" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: Identifiants invalides (message generique).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+              example: { status: 401, code: INVALID_CREDENTIALS, message: Identifiants invalides. }
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Fermer la session
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "204": { description: Session fermee. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: Identite de la session courante
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "200":
+          description: Utilisateur connecte.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/dashboard/overview:
+    get:
+      tags: [dashboard]
+      operationId: getOverview
+      summary: Vue d'ensemble de la securite
+      description: L'`asr` vient des resultats d'evaluation mesures ; `null` tant qu'aucune campagne n'existe.
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "200":
+          description: Indicateurs agreges.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Overview" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/security/events:
+    get:
+      tags: [security]
+      operationId: listSecurityEvents
+      summary: Evenements de securite (Threat Monitoring)
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+        - { name: module, in: query, schema: { $ref: "#/components/schemas/GuardModule" } }
+        - { name: decision, in: query, schema: { $ref: "#/components/schemas/Decision" } }
+        - { name: attackType, in: query, schema: { $ref: "#/components/schemas/AttackType" } }
+        - { name: from, in: query, description: Borne basse (incluse), schema: { type: string, format: date-time } }
+        - { name: to, in: query, description: Borne haute (exclue), schema: { type: string, format: date-time } }
+      responses:
+        "200":
+          description: Page d'evenements, du plus recent au plus ancien.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecurityEventPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/security/events/{id}:
+    get:
+      tags: [security]
+      operationId: getSecurityEvent
+      summary: Detail d'un evenement
+      description: "`excerpt` est masque sauf pour `ADMIN`."
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Evenement.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecurityEvent" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/simulations/run:
+    post:
+      tags: [simulations]
+      operationId: runSimulation
+      summary: Lancer une simulation (sans puis avec protection)
+      description: |
+        Execution asynchrone : repond `202` avec le `simulationId` (statut `SUBMITTED`) ; suivre l'avancement
+        avec `GET /api/simulations/{id}`. Un `scenarioId` inconnu renvoie `400`.
+      x-roles: [ANALYST, ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SimulationRunRequest" }
+      responses:
+        "202":
+          description: Simulation acceptee.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SimulationAccepted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/simulations/{id}:
+    get:
+      tags: [simulations]
+      operationId: getSimulation
+      summary: Etat et resultat d'une simulation
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Simulation.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Simulation" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/approvals:
+    get:
+      tags: [approvals]
+      operationId: listApprovals
+      summary: Actions en attente de validation humaine
+      x-roles: [APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+        - { name: status, in: query, schema: { $ref: "#/components/schemas/ApprovalStatus" } }
+      responses:
+        "200":
+          description: Page de demandes de validation.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApprovalPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/approvals/{id}:
+    get:
+      tags: [approvals]
+      operationId: getApproval
+      summary: Detail d'une demande de validation
+      description: "`parameters` est masque sauf pour `ADMIN`."
+      x-roles: [APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Demande.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Approval" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/approvals/{id}/approve:
+    post:
+      tags: [approvals]
+      operationId: approveApproval
+      summary: Approuver l'action
+      description: |
+        L'action n'est executee que si le role, l'expiration et l'empreinte des parametres sont conformes.
+        `409` si la demande est deja traitee, expiree, ou si `parametersHash` ne correspond pas.
+      x-roles: [APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApprovalDecisionRequest" }
+      responses:
+        "200":
+          description: Decision enregistree.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Approval" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /api/approvals/{id}/reject:
+    post:
+      tags: [approvals]
+      operationId: rejectApproval
+      summary: Rejeter l'action
+      description: L'action n'est jamais executee. `409` si la demande est deja traitee ou expiree.
+      x-roles: [APPROVER, ADMIN]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApprovalDecisionRequest" }
+      responses:
+        "200":
+          description: Decision enregistree.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Approval" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /api/analytics/metrics:
+    get:
+      tags: [analytics]
+      operationId: getAnalyticsMetrics
+      summary: Resultats d'evaluation mesures
+      description: "`status: not_available` tant qu'aucun fichier de resultats n'existe (jamais de chiffre invente)."
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "200":
+          description: Resultats mesures.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnalyticsMetrics" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/audit/events:
+    get:
+      tags: [audit]
+      operationId: listAuditEvents
+      summary: Journal d'audit
+      x-roles: [ANALYST, ADMIN]
+      x-to-confirm: Le frontend appelle actuellement `/api/events` (frontend/src/services/api.ts) ; l'aligner sur ce chemin.
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+        - { name: search, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: module, in: query, schema: { type: string } }
+        - { name: decision, in: query, schema: { $ref: "#/components/schemas/Decision" } }
+      responses:
+        "200":
+          description: Page d'evenements d'audit.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/policy:
+    get:
+      tags: [system]
+      operationId: getPolicy
+      summary: Politique de securite en vigueur (lecture seule)
+      description: Relaie `GET /internal/policy` du service IA.
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "200":
+          description: Politique.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PolicyView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/system/health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Etat de sante
+      description: |
+        Publique (sonde Docker). Sans session : `{status}` uniquement. Avec session : `services` detaille l'etat
+        de chaque composant ; un service n'est `UP` que sur preuve.
+      security: []
+      x-roles: []
+      responses:
+        "200":
+          description: Etat global.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemHealth" }
+        "503":
+          description: Backend degrade.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemHealth" }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: AGENTSHIELD_SESSION
+      description: Cookie de session HttpOnly. Les requetes non-GET exigent aussi l'en-tete `X-XSRF-TOKEN`.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 64 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    Size:
+      name: size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    BadRequest:
+      description: Requete invalide.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example: { status: 400, code: BAD_REQUEST, message: Requete invalide. }
+    Unauthorized:
+      description: Pas de session valide.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example: { status: 401, code: UNAUTHENTICATED, message: Authentification requise. }
+    Forbidden:
+      description: Session valide mais role insuffisant pour cette operation (voir `x-roles`).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example: { status: 403, code: FORBIDDEN, message: Acces refuse. }
+    NotFound:
+      description: Ressource introuvable.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example: { status: 404, code: NOT_FOUND, message: Ressource introuvable. }
+    Conflict:
+      description: Etat incompatible (deja traitee, expiree, empreinte des parametres differente).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ConflictError" }
+          example: { status: 409, code: APPROVAL_ALREADY_DECIDED, message: Cette demande a deja ete traitee. }
+
+  schemas:
+    ApiError:
+      type: object
+      description: Format d'erreur commun. Ne contient jamais de trace ni de detail interne.
+      required: [status, code, message]
+      additionalProperties: false
+      properties:
+        status: { type: integer, minimum: 400, maximum: 599 }
+        code: { type: string, examples: [FORBIDDEN] }
+        message: { type: string }
+
+    ConflictError:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - type: object
+          properties:
+            status: { const: 409 }
+            code:
+              enum: [APPROVAL_ALREADY_DECIDED, APPROVAL_EXPIRED, PARAMETERS_MISMATCH, CONFLICT]
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      additionalProperties: false
+      properties:
+        username: { type: string, minLength: 1, maxLength: 100 }
+        password: { type: string, minLength: 1, maxLength: 200, writeOnly: true }
+
+    Role:
+      type: string
+      enum: [ANALYST, APPROVER, ADMIN]
+
+    SessionUser:
+      type: object
+      required: [username, role]
+      properties:
+        username: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        email: { type: [string, "null"] }
+
+    Decision:
+      type: string
+      enum: [ALLOW, SANITIZE, CONFIRM, BLOCK]
+
+    AttackType:
+      type: string
+      enum: [direct_injection, indirect_injection, data_leak, tool_abuse, none]
+
+    RiskLevel:
+      type: string
+      enum: [low, medium, high]
+
+    GuardModule:
+      type: string
+      enum: [A, B, C, D, ENGINE]
+
+    Verdict:
+      type: object
+      description: Copie du contrat `docs/contract/verdict.schema.json` (v1.0). Verifiee par `scripts/check_openapi.py`.
+      required: [module, attackType, score, riskLevel, reason]
+      additionalProperties: false
+      properties:
+        module: { $ref: "#/components/schemas/GuardModule" }
+        attackType: { $ref: "#/components/schemas/AttackType" }
+        score: { type: number, minimum: 0, maximum: 1 }
+        riskLevel: { $ref: "#/components/schemas/RiskLevel" }
+        decision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+        reason: { type: string }
+        correlationId: { type: [string, "null"] }
+        cleaned: { type: [string, "null"] }
+        degraded: { type: boolean }
+        latencyMs: { type: number, minimum: 0 }
+        metadata: { type: object }
+
+    Overview:
+      type: object
+      required: [totalRequests, attacksDetected, blockedActions, sanitizedActions, pendingConfirmations, asr, attacksOverTime, decisions, byCategory, bySeverity, recent]
+      properties:
+        totalRequests: { type: [integer, "null"], minimum: 0 }
+        attacksDetected: { type: [integer, "null"], minimum: 0 }
+        blockedActions: { type: [integer, "null"], minimum: 0 }
+        sanitizedActions: { type: [integer, "null"], minimum: 0 }
+        pendingConfirmations: { type: [integer, "null"], minimum: 0 }
+        asr:
+          type: [number, "null"]
+          minimum: 0
+          maximum: 1
+          description: Taux de reussite des attaques ; `null` tant qu'aucune campagne n'est mesuree.
+        attacksOverTime:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date: { type: string, format: date }
+              count: { type: integer, minimum: 0 }
+        decisions:
+          type: object
+          propertyNames: { $ref: "#/components/schemas/Decision" }
+          additionalProperties: { type: integer, minimum: 0 }
+        byCategory:
+          type: object
+          propertyNames: { $ref: "#/components/schemas/AttackType" }
+          additionalProperties: { type: integer, minimum: 0 }
+        bySeverity:
+          type: object
+          propertyNames: { $ref: "#/components/schemas/RiskLevel" }
+          additionalProperties: { type: integer, minimum: 0 }
+        recent:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/RecentEvent" }
+
+    RecentEvent:
+      type: object
+      required: [id, timestamp, module, decision, attackType, summary]
+      properties:
+        id: { type: string }
+        timestamp: { type: string, format: date-time }
+        module: { type: string }
+        decision: { $ref: "#/components/schemas/Decision" }
+        attackType: { $ref: "#/components/schemas/AttackType" }
+        summary: { type: string }
+
+    SecurityEvent:
+      type: object
+      required: [id, timestamp, module, attackType, score, riskLevel, decision, reason]
+      properties:
+        id: { type: string }
+        timestamp: { type: string, format: date-time }
+        module: { $ref: "#/components/schemas/GuardModule" }
+        attackType: { $ref: "#/components/schemas/AttackType" }
+        score: { type: number, minimum: 0, maximum: 1 }
+        riskLevel: { $ref: "#/components/schemas/RiskLevel" }
+        decision: { $ref: "#/components/schemas/Decision" }
+        reason: { type: string }
+        correlationId: { type: [string, "null"] }
+        simulationId: { type: [string, "null"] }
+        toolName: { type: [string, "null"] }
+        excerpt:
+          type: [string, "null"]
+          description: Extrait du contenu analyse, **masque** sauf pour `ADMIN`.
+
+    SecurityEventPage:
+      allOf:
+        - $ref: "#/components/schemas/PageBase"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/SecurityEvent" }
+
+    SimulationRunRequest:
+      type: object
+      required: [scenarioId]
+      additionalProperties: false
+      x-to-confirm: Format du `scenarioId` (catalogue des 5 scenarios, AS-S3-006).
+      properties:
+        scenarioId:
+          type: string
+          pattern: "^[a-z0-9-]{1,40}$"
+          examples: [scenario-1]
+
+    SimulationAccepted:
+      type: object
+      required: [simulationId, status]
+      properties:
+        simulationId: { type: string }
+        status: { const: SUBMITTED }
+
+    SimulationStatus:
+      type: string
+      enum: [SUBMITTED, RUNNING, AWAITING_APPROVAL, COMPLETED, FAILED]
+
+    PipelineStep:
+      type: object
+      required: [name, status]
+      properties:
+        name: { type: string }
+        status:
+          type: string
+          enum: [PENDING, RUNNING, DONE, SKIPPED, FAILED]
+        verdict:
+          oneOf:
+            - $ref: "#/components/schemas/Verdict"
+            - type: "null"
+
+    SimulationRun:
+      type: object
+      description: Une execution de l'agent (sans ou avec protection).
+      required: [mode, steps, attackSucceeded]
+      properties:
+        mode: { type: string, enum: [unprotected, protected] }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/PipelineStep" }
+        finalDecision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+        attackSucceeded:
+          type: [boolean, "null"]
+          description: "`null` tant que l'execution n'est pas terminee."
+        finalResponse: { type: [string, "null"] }
+
+    Simulation:
+      type: object
+      x-to-confirm: Aligner sur l'Annexe D du dossier.
+      required: [simulationId, scenarioId, status, createdAt, unprotected, protected]
+      properties:
+        simulationId: { type: string }
+        scenarioId: { type: string }
+        status: { $ref: "#/components/schemas/SimulationStatus" }
+        createdAt: { type: string, format: date-time }
+        completedAt: { type: [string, "null"], format: date-time }
+        error:
+          type: [string, "null"]
+          description: Message generique si `status = FAILED` (ex. service IA indisponible), sans detail interne.
+        unprotected:
+          oneOf:
+            - $ref: "#/components/schemas/SimulationRun"
+            - type: "null"
+        protected:
+          oneOf:
+            - $ref: "#/components/schemas/SimulationRun"
+            - type: "null"
+
+    ApprovalStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+
+    Approval:
+      type: object
+      required: [id, status, toolName, riskLevel, reason, parametersHash, createdAt, expiresAt]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/ApprovalStatus" }
+        toolName: { type: string }
+        parameters:
+          type: [object, "null"]
+          description: Parametres de l'appel d'outil, **masques** sauf pour `ADMIN`.
+        parametersHash:
+          type: string
+          description: Empreinte (SHA-256) des parametres exacts soumis a validation.
+        riskLevel: { $ref: "#/components/schemas/RiskLevel" }
+        reason: { type: string }
+        simulationId: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        decidedBy: { type: [string, "null"] }
+        decidedAt: { type: [string, "null"], format: date-time }
+
+    ApprovalPage:
+      allOf:
+        - $ref: "#/components/schemas/PageBase"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Approval" }
+
+    ApprovalDecisionRequest:
+      type: object
+      required: [parametersHash]
+      additionalProperties: false
+      properties:
+        parametersHash:
+          type: string
+          description: Empreinte lue dans la demande ; refus `409` si elle differe de celle enregistree.
+        comment: { type: string, maxLength: 500 }
+
+    AuditEvent:
+      type: object
+      required: [id, timestamp, actor, action, module, decision, result, reference]
+      properties:
+        id: { type: string }
+        timestamp: { type: string, format: date-time }
+        actor: { type: string }
+        action: { type: string }
+        module: { type: string }
+        decision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+        result: { type: string }
+        reference: { type: string }
+        details: { type: [object, "null"] }
+
+    AuditPage:
+      allOf:
+        - $ref: "#/components/schemas/PageBase"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/AuditEvent" }
+
+    PageBase:
+      type: object
+      required: [page, size, total]
+      properties:
+        page: { type: integer, minimum: 0 }
+        size: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0 }
+
+    PolicyView:
+      type: object
+      description: Vue en lecture seule de `policy.yaml` (voir ai-service/config/policy.yaml).
+      properties:
+        thresholds: { type: object, additionalProperties: { type: number } }
+        tools: { type: object, additionalProperties: { type: object } }
+        output: { type: object }
+
+    AnalyticsMetrics:
+      type: object
+      required: [status, results]
+      properties:
+        status: { type: string, enum: [ok, not_available] }
+        message: { type: [string, "null"] }
+        results:
+          type: array
+          description: Fichiers de resultats mesures (schema `ai-service/evaluation/results.schema.json`).
+          items: { type: object }
+
+    ServiceState:
+      type: string
+      enum: [UP, DOWN, DEGRADED]
+
+    SystemHealth:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/ServiceState" }
+        services:
+          type: array
+          description: Present uniquement avec une session valide.
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name: { type: string }
+              status: { $ref: "#/components/schemas/ServiceState" }
+              detail: { type: [string, "null"] }

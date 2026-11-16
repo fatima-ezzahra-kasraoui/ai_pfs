@@ -1,0 +1,18 @@
+name: Contract
+
+on:
+  pull_request:
+    paths: ["docs/contract/**", "scripts/check_openapi.py"]
+  push:
+    branches: [main]
+    paths: ["docs/contract/**", "scripts/check_openapi.py"]
+
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml openapi-spec-validator
+      - run: python scripts/check_openapi.py
