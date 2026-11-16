@@ -1,0 +1,531 @@
+{
+  "schemaVersion": 1,
+  "kind": "detection",
+  "name": "guard_d",
+  "split": "validation",
+  "status": "preliminary",
+  "generatedAt": "2026-11-15T23:52:13+00:00",
+  "commit": "6e00dcbe79ae38571ef527c42cc0f084934e8d20",
+  "dirty": true,
+  "seed": 42,
+  "config": {
+    "thresholds": {
+      "injection_block": 0.9,
+      "injection_review": 0.5,
+      "coherence_min": 0.4
+    },
+    "presidio": false,
+    "casesDerivedFrom": "synthetic.py (valeurs factices)"
+  },
+  "metrics": {
+    "n": 60,
+    "confusion": {
+      "tp": 30,
+      "fp": 0,
+      "tn": 30,
+      "fn": 0
+    },
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "fpr": 0.0,
+    "threshold": 0.5,
+    "latencyMs": {
+      "n": 60,
+      "mean": 0.024175,
+      "p50": 0.0187,
+      "p95": 0.04144499999999981,
+      "max": 0.1255
+    },
+    "secretsStillInClear": 0,
+    "errors": {
+      "falseNegatives": [],
+      "falsePositives": []
+    }
+  },
+  "cases": [
+    {
+      "id": "d-leak-1001-000",
+      "label": 1,
+      "score": 0.95,
+      "latencyMs": 0.1255,
+      "kind": "api_key",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-001",
+      "label": 1,
+      "score": 1.0,
+      "latencyMs": 0.0381,
+      "kind": "canary",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-002",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.105,
+      "kind": "credit_card",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-003",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.1146,
+      "kind": "iban",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-004",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.033,
+      "kind": "email",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-005",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0293,
+      "kind": "phone",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-006",
+      "label": 1,
+      "score": 0.95,
+      "latencyMs": 0.0252,
+      "kind": "api_key",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-007",
+      "label": 1,
+      "score": 1.0,
+      "latencyMs": 0.0196,
+      "kind": "canary",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-008",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0284,
+      "kind": "credit_card",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-009",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0346,
+      "kind": "iban",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-010",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0217,
+      "kind": "email",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-011",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0197,
+      "kind": "phone",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-012",
+      "label": 1,
+      "score": 0.95,
+      "latencyMs": 0.0261,
+      "kind": "api_key",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-013",
+      "label": 1,
+      "score": 1.0,
+      "latencyMs": 0.0194,
+      "kind": "canary",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-014",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0258,
+      "kind": "credit_card",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-015",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0314,
+      "kind": "iban",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-016",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.018,
+      "kind": "email",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-017",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.022,
+      "kind": "phone",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-018",
+      "label": 1,
+      "score": 0.95,
+      "latencyMs": 0.0203,
+      "kind": "api_key",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-019",
+      "label": 1,
+      "score": 1.0,
+      "latencyMs": 0.0213,
+      "kind": "canary",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-020",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0257,
+      "kind": "credit_card",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-021",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0334,
+      "kind": "iban",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-022",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.021,
+      "kind": "email",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-023",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0208,
+      "kind": "phone",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-024",
+      "label": 1,
+      "score": 0.95,
+      "latencyMs": 0.0196,
+      "kind": "api_key",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-025",
+      "label": 1,
+      "score": 1.0,
+      "latencyMs": 0.0215,
+      "kind": "canary",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-026",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0265,
+      "kind": "credit_card",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-027",
+      "label": 1,
+      "score": 0.9,
+      "latencyMs": 0.0306,
+      "kind": "iban",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-028",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0252,
+      "kind": "email",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-leak-1001-029",
+      "label": 1,
+      "score": 0.6,
+      "latencyMs": 0.0197,
+      "kind": "phone",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-000",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.015,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-001",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0373,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-002",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0134,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-003",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0141,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-004",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0145,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-005",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0126,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-006",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0153,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-007",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0153,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-008",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0135,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-009",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.012,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-010",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0125,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-011",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0128,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-012",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0113,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-013",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0133,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-014",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.016,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-015",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0114,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-016",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0134,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-017",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.015,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-018",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0159,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-019",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0133,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-020",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.011,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-021",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0137,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-022",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0124,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-023",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0133,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-024",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.014,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-025",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0116,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-026",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0132,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-027",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0155,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-028",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0134,
+      "kind": "clean",
+      "secretStillInClear": false
+    },
+    {
+      "id": "d-clean-1001-029",
+      "label": 0,
+      "score": 0.0,
+      "latencyMs": 0.0115,
+      "kind": "clean",
+      "secretStillInClear": false
+    }
+  ],
+  "notes": [
+    "Mesure préliminaire sur la validation ; seuils TEMPORARY."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentshield.local/contract/results.schema.json",
+  "title": "Fichier de résultats d'évaluation",
+  "description": "Produit par les scripts de evaluation/ ; jamais saisi à la main.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "name", "split", "status", "generatedAt", "commit", "dirty", "seed", "config", "metrics"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "enum": ["detection", "benchmark", "ablation", "threshold_tuning", "attack_run"] },
+    "name": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "split": { "enum": ["validation", "test"] },
+    "status": { "enum": ["preliminary", "official"] },
+    "generatedAt": { "type": "string" },
+    "commit": { "type": "string" },
+    "dirty": { "type": "boolean" },
+    "seed": { "type": "integer" },
+    "config": { "type": "object" },
+    "metrics": { "type": "object" },
+    "cases": { "type": "array" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "split": { "const": "test" } } },
+      "then": { "properties": { "status": { "const": "official" } } }
+    },
+    {
+      "if": { "properties": { "split": { "const": "validation" } } },
+      "then": { "properties": { "status": { "const": "preliminary" } } }
+    }
+  ]
+}

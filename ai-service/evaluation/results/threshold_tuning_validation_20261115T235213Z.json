@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "kind": "threshold_tuning",
+  "name": "threshold_tuning",
+  "split": "validation",
+  "status": "preliminary",
+  "generatedAt": "2026-11-15T23:52:13+00:00",
+  "commit": "6e00dcbe79ae38571ef527c42cc0f084934e8d20",
+  "dirty": true,
+  "seed": 42,
+  "config": {
+    "grid": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "maxFpr": 0.05,
+    "classifier": null,
+    "casesUsed": "guards A et B, split validation"
+  },
+  "metrics": {
+    "before": {
+      "injection_block": 0.9,
+      "injection_review": 0.5,
+      "coherence_min": 0.4
+    },
+    "chosen": {
+      "injection_review": 0.5,
+      "injection_block": 0.9,
+      "coherence_min": 0.4
+    },
+    "sweep": [
+      {
+        "threshold": 0.05,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.1,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.15,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.2,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.25,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.3,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333,
+        "fpr": 0.06666666666666667,
+        "confusion": {
+          "tp": 28,
+          "fp": 2,
+          "tn": 28,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.35,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "f1": 0.9655172413793104,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 28,
+          "fp": 0,
+          "tn": 30,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.4,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "f1": 0.9655172413793104,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 28,
+          "fp": 0,
+          "tn": 30,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.45,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "f1": 0.9655172413793104,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 28,
+          "fp": 0,
+          "tn": 30,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.5,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "f1": 0.9655172413793104,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 28,
+          "fp": 0,
+          "tn": 30,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.55,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "f1": 0.9655172413793104,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 28,
+          "fp": 0,
+          "tn": 30,
+          "fn": 2
+        }
+      },
+      {
+        "threshold": 0.6,
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9473684210526316,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 27,
+          "fp": 0,
+          "tn": 30,
+          "fn": 3
+        }
+      },
+      {
+        "threshold": 0.65,
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9473684210526316,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 27,
+          "fp": 0,
+          "tn": 30,
+          "fn": 3
+        }
+      },
+      {
+        "threshold": 0.7,
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9473684210526316,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 27,
+          "fp": 0,
+          "tn": 30,
+          "fn": 3
+        }
+      },
+      {
+        "threshold": 0.75,
+        "precision": 1.0,
+        "recall": 0.7,
+        "f1": 0.8235294117647058,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 21,
+          "fp": 0,
+          "tn": 30,
+          "fn": 9
+        }
+      },
+      {
+        "threshold": 0.8,
+        "precision": 1.0,
+        "recall": 0.7,
+        "f1": 0.8235294117647058,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 21,
+          "fp": 0,
+          "tn": 30,
+          "fn": 9
+        }
+      },
+      {
+        "threshold": 0.85,
+        "precision": 1.0,
+        "recall": 0.5333333333333333,
+        "f1": 0.6956521739130436,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 16,
+          "fp": 0,
+          "tn": 30,
+          "fn": 14
+        }
+      },
+      {
+        "threshold": 0.9,
+        "precision": 1.0,
+        "recall": 0.5333333333333333,
+        "f1": 0.6956521739130436,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 16,
+          "fp": 0,
+          "tn": 30,
+          "fn": 14
+        }
+      },
+      {
+        "threshold": 0.95,
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "f1": 0.5,
+        "fpr": 0.0,
+        "confusion": {
+          "tp": 10,
+          "fp": 0,
+          "tn": 30,
+          "fn": 20
+        }
+      }
+    ],
+    "rationale": [
+      "Validation : 60 cas dont 30 attaques (échantillon petit : les seuils sont indicatifs).",
+      "injection_review = 0.5 : plateau 0.35–0.55 (rappel 0.933, FPR ≤ 5%), valeur la plus proche du point de départ 0.5.",
+      "injection_block = 0.9 : seuil ≥ 0.8 et ≥ review + 0,05, précision ≥ 0,99 sur la validation, le plus proche du point de départ 0.9.",
+      "coherence_min non réglé : dépend du Guard C (É2)."
+    ],
+    "frozen": false
+  },
+  "notes": [
+    "Le split de test n'a pas été lu. Réglage sur la validation uniquement."
+  ]
+}

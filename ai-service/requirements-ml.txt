@@ -1,0 +1,7 @@
+# Dépendances optionnelles (qualité maximale) : modèle Hugging Face et Presidio.
+# Sans elles, le Guard A passe en mode dégradé et le Guard D utilise les regex seules.
+transformers>=4.40
+torch>=2.2
+datasets>=2.19
+presidio-analyzer>=2.2
+presidio-anonymizer>=2.2

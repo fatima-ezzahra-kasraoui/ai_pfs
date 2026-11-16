@@ -1,0 +1,48 @@
+{
+  "seed": 42,
+  "ratios": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15
+  },
+  "duplicatesDropped": 0,
+  "splits": {
+    "train": {
+      "file": "train.jsonl",
+      "total": 140,
+      "injection": 70,
+      "normal": 70,
+      "bySource": {
+        "french_lot1": 57,
+        "french_lot2": 83
+      },
+      "sha256": "ab5cafa66c901d95e7812cc205a0394b64b3e73fb1c6ddfcba322d263c7e46d3"
+    },
+    "validation": {
+      "file": "validation.jsonl",
+      "total": 30,
+      "injection": 15,
+      "normal": 15,
+      "bySource": {
+        "french_lot1": 9,
+        "french_lot2": 21
+      },
+      "sha256": "696ad2c7011fe0a97f29c4223843aebbb95bf4c019410a3674d09dc3b67d896c"
+    },
+    "test": {
+      "file": "test.jsonl",
+      "total": 30,
+      "injection": 15,
+      "normal": 15,
+      "bySource": {
+        "french_lot1": 14,
+        "french_lot2": 16
+      },
+      "sha256": "4cff6969e2e7164a872e2670151f715b1793ae2bda18f4e9715f63f29a3eeba3"
+    }
+  },
+  "sources": {
+    "french_lot1.json": "b53eee567452242c7b782f7dc2611403049c05f13ba6c8a74b08dd7474d26111",
+    "french_lot2.json": "713c461de9076068c0b91d48ace1d6366db1020864aab8a04da49bd35fda3e93"
+  }
+}
