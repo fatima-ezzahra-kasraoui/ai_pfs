@@ -55,4 +55,5 @@ Tous les chiffres (précision, rappel, ASR, latence…) sont produits par les sc
 `ai-service/evaluation/` et écrits dans `ai-service/evaluation/results/` avec la date et le commit.
 Tant qu'aucun résultat n'existe, l'interface affiche « Évaluation à venir ».
 
+Avancement et guide d'équipe : `docs/AVANCEMENT.md`.
 Voir `CONTRIBUTING.md` pour les branches, commits et Pull Requests.
