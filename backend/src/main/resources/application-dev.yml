@@ -1,0 +1,4 @@
+# Profil de developpement local. Les comptes de seed (S1-018) ne sont crees qu'ici.
+logging:
+  level:
+    ma.agentshield: DEBUG

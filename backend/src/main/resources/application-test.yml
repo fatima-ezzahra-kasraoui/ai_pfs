@@ -1,0 +1,4 @@
+# Profil de test (JUnit).
+logging:
+  level:
+    ma.agentshield: INFO

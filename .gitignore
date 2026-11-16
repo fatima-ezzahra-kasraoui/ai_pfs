@@ -27,3 +27,7 @@ models_cache/
 .idea/
 .vscode/
 .DS_Store
+
+# Java / Maven
+target/
+*.log
