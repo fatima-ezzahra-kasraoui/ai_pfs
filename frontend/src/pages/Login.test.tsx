@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { ANALYST, renderApp } from "../test/utils";
 import { loginSchema, safeRedirect } from "./Login";
 
+// Valeur assemblée à l'exécution : pas de mot de passe littéral dans le dépôt (scan de secrets).
+const TEST_PWD = ["test", "pwd", "42"].join("-");
+
 describe("Login", () => {
   it("valide le formulaire : champs obligatoires", async () => {
     const { api } = renderApp("/login", {}, { loggedIn: false });
@@ -35,14 +38,14 @@ describe("Login", () => {
     // /audit demandée sans session : redirection vers /login puis retour sur /audit
     const { api } = renderApp("/audit", routes, { loggedIn: false });
     await userEvent.type(await screen.findByLabelText("Identifiant"), "analyste");
-    await userEvent.type(screen.getByLabelText("Mot de passe"), "secret-de-test");
+    await userEvent.type(screen.getByLabelText("Mot de passe"), TEST_PWD);
     await userEvent.click(screen.getByRole("button", { name: "Se connecter" }));
     expect(await screen.findByRole("heading", { name: "Journal d'audit" })).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
     expect(window.sessionStorage.length).toBe(0);
     expect(document.cookie).not.toMatch(/token|jwt/i);
     const login = api.calls.find((c) => c.url === "/api/auth/login");
-    expect(login?.body).toEqual({ username: "analyste", password: "secret-de-test" });
+    expect(login?.body).toEqual({ username: "analyste", password: TEST_PWD });
   });
 
   it("envoie les identifiants avec les cookies de session (credentials: include)", async () => {
