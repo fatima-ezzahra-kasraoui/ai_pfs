@@ -2,17 +2,53 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..llm.config import LLMConfig
+
 POLICY_PATH = Path(os.environ.get("POLICY_PATH", Path(__file__).resolve().parents[2] / "config" / "policy.yaml"))
+
+
+def _flag(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    return default if not raw else raw in {"1", "true", "yes", "on"}
+
+
+ENVS = ("dev", "test", "recette", "production")
+STUB_FORBIDDEN_ENVS = ("recette", "production")
+
+
+class StubForbiddenError(RuntimeError):
+    """Le stub (AI_STUB=true) ne doit jamais être actif en recette ni en production (AS-S1-010)."""
 
 
 @dataclass(frozen=True)
 class Settings:
     service_key: str
+    # --- ajouts AS-S1-008/009 (valeurs par défaut : le constructeur Settings(service_key=...) reste valide) ---
+    env: str = "dev"  # dev | test | recette | production
+    expose_docs: bool = True  # /docs et /openapi.json ; désactivé par défaut en production
+    max_body_bytes: int = 1_048_576  # taille maximale d'un corps de requête (Content-Length)
+    agent_max_steps: int = 6  # nombre maximal d'appels LLM par exécution de l'agent
+    llm: LLMConfig = field(default_factory=LLMConfig)
+    stub: bool = False  # AI_STUB=true : faux service IA contractuel (fixtures), interdit en recette et en production
+
+    def validate(self) -> None:
+        """Échec fermé au démarrage : le stub ne peut pas être actif dans un profil de recette ou de production."""
+        if self.stub and self.env in STUB_FORBIDDEN_ENVS:
+            raise StubForbiddenError(f"AI_STUB=true est interdit avec AI_ENV={self.env}")
 
     @classmethod
     def from_env(cls) -> Settings:
-        # Pas de valeur par défaut : sans clé configurée, tout appel est refusé (échec fermé).
-        return cls(service_key=os.environ.get("AI_SERVICE_KEY", ""))
+        env = os.environ.get("AI_ENV", "dev").strip().lower() or "dev"
+        return cls(
+            # Pas de valeur par défaut : sans clé configurée, tout appel est refusé (échec fermé).
+            service_key=os.environ.get("AI_SERVICE_KEY", ""),
+            env=env,
+            expose_docs=_flag("AI_EXPOSE_DOCS", env not in STUB_FORBIDDEN_ENVS),
+            max_body_bytes=int(os.environ.get("AI_MAX_BODY_BYTES", "1048576") or 1_048_576),
+            agent_max_steps=int(os.environ.get("AGENT_MAX_STEPS", "6") or 6),
+            llm=LLMConfig.from_env(),
+            stub=_flag("AI_STUB", False),
+        )

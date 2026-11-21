@@ -9,8 +9,8 @@ describe("MainLayout", () => {
     expect(NAV_ITEMS).toHaveLength(7);
   });
 
+  // « /lab » n'est plus un placeholder (AS-S1-024) : voir pages/AttackSimulation.test.tsx.
   it.each([
-    ["/lab", "Attack Simulation Lab"],
     ["/threats", "Threat Monitoring"],
     ["/approvals", "Approval Center"],
   ])("la route %s est accessible", async (path, title) => {
