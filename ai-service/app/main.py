@@ -7,26 +7,66 @@ from fastapi import FastAPI
 
 from evaluation.results import RESULTS_DIR
 
-from .api import metrics, security
+from .agent.service import AgentService
+from .api import agent, errors, health, metrics, middleware, security
 from .core.config import Settings
+from .llm import LLMConfigError, build_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+log = logging.getLogger("agentshield.app")
+VERSION = health.VERSION
 
 
-def create_app(settings: Settings | None = None, guards: dict | None = None, results_dir=RESULTS_DIR) -> FastAPI:
-    app = FastAPI(title="AgentShield AI service", version="1.0.0", docs_url="/docs")
-    app.state.settings = settings or Settings.from_env()
+def create_app(settings: Settings | None = None, guards: dict | None = None, results_dir=RESULTS_DIR, llm=None, stub: bool | None = None) -> FastAPI:
+    """``llm`` : client LLM injecté (tests) ; sinon construit depuis ``settings.llm`` (variables ``LLM_*``).
+
+    ``stub`` (défaut : ``settings.stub``, variable ``AI_STUB``) : faux service IA contractuel, refusé en recette et en production.
+    """
+    settings = settings or Settings.from_env()
+    stub = settings.stub if stub is None else stub
+    if stub:
+        settings.validate()
+        from .llm.providers.mock import SimulatedLLM
+        from .stub.guards import stub_guards
+
+        guards, llm, results_dir = stub_guards(), SimulatedLLM(), _empty_results_dir() if results_dir is RESULTS_DIR else results_dir
+        log.warning("STUB ACTIF : les verdicts sont des fixtures, aucune détection réelle (AI_STUB=true)")
+    app = FastAPI(
+        title="AgentShield AI service", version=VERSION,
+        docs_url="/docs" if settings.expose_docs else None,
+        redoc_url=None,
+        openapi_url="/openapi.json" if settings.expose_docs else None,
+    )
+    app.state.settings = settings
     app.state.guards = guards if guards is not None else security.build_guards()
     app.state.results_dir = results_dir
+    app.state.stub = stub
+    app.state.llm_error = None
+    app.state.agent = None
+    try:
+        client = llm if llm is not None else build_client(settings.llm)
+        app.state.agent = AgentService(client, app.state.guards, max_steps=settings.agent_max_steps)
+        app.state.llm_info = {"provider": client.name, "simulated": client.simulated}
+    except LLMConfigError as exc:
+        # Échec fermé limité à l'agent : les guards restent disponibles. Le message ne contient jamais de secret.
+        app.state.llm_error = str(exc)
+        app.state.llm_info = {"provider": settings.llm.provider, "simulated": settings.llm.provider == "mock"}
+        log.error("agent désactivé : %s", exc)
+    middleware.install(app, stub=stub)
+    errors.install(app)
     app.include_router(security.router)
     app.include_router(metrics.router)
-
-    @app.get("/health")
-    def health() -> dict:
-        degraded = {m: bool(g.degraded) for m, g in app.state.guards.items()}
-        return {"status": "ok", "degraded": degraded}
-
+    app.include_router(agent.router)
+    app.include_router(health.protected)
+    app.include_router(health.public)
     return app
+
+
+def _empty_results_dir():
+    import tempfile
+    from pathlib import Path
+
+    return Path(tempfile.mkdtemp(prefix="agentshield-stub-"))  # le stub n'affiche aucun chiffre factice : « Évaluation à venir »
 
 
 app = create_app()
