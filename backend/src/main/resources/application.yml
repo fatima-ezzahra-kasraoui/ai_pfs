@@ -5,9 +5,23 @@ spring:
     default: dev
   flyway:
     enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Le schema appartient a Flyway : Hibernate verifie seulement que les entites lui correspondent.
+      ddl-auto: validate
 
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: AGENTSHIELD_SESSION
+        http-only: true
+        same-site: strict
+        # true derriere HTTPS (profil prod) ; false en local (http://localhost)
+        secure: ${SESSION_COOKIE_SECURE:false}
   error:
     include-stacktrace: never
     include-message: never
@@ -24,6 +38,9 @@ management:
       show-details: never
 
 agentshield:
+  dev-seed:
+    # Mot de passe des comptes de developpement (profil dev UNIQUEMENT). Vide = aucun compte cree.
+    password: ${DEV_SEED_PASSWORD:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   ai-service:

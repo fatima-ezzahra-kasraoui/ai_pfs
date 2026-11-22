@@ -34,10 +34,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- Persistance (AS-S1-016) : JDBC + migrations Flyway versionnees sur PostgreSQL -->
+        <!-- Authentification (AS-S1-018) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <!-- Persistance : JPA (AS-S1-017) + migrations Flyway versionnees (AS-S1-016) sur PostgreSQL -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -56,6 +61,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Tests d'integration sur un vrai PostgreSQL (Docker requis) -->

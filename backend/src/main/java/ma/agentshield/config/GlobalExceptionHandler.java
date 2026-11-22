@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,10 +34,22 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "NOT_FOUND", "Ressource introuvable.");
     }
 
+    /** Compte inconnu, mauvais mot de passe ou compte desactive : meme reponse, rien ne permet de les distinguer. */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex) {
+        return build(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Identifiants invalides.");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", "Acces refuse.");
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiError> handleStatus(ResponseStatusException ex) {
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
-        return build(status, status.name(), status.getReasonPhrase());
+        String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        return build(status, status.name(), message);
     }
 
     @ExceptionHandler(Exception.class)
