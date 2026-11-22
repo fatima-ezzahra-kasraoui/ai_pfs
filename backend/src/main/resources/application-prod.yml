@@ -1,0 +1,6 @@
+# Profil de production : cookie de session uniquement via HTTPS, aucun compte de seed (voir DevUserSeeder).
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true

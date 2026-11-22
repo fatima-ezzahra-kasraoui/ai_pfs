@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,16 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/boom")
         String boom() {
             throw new IllegalStateException("secret interne : jdbc:postgresql://db/prod");
+        }
+
+        @GetMapping("/bad-credentials")
+        String badCredentials() {
+            throw new BadCredentialsException("detail interne : utilisateur inconnu");
+        }
+
+        @GetMapping("/denied")
+        String denied() {
+            throw new AccessDeniedException("detail interne");
         }
 
         @GetMapping("/forbidden")
@@ -56,5 +68,24 @@ class GlobalExceptionHandlerTest {
         mvc.perform(get("/forbidden"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void authenticationFailureIsAGenericInvalidCredentials401() throws Exception {
+        mvc.perform(get("/bad-credentials"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
+                .andExpect(jsonPath("$.message").value("Identifiants invalides."))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("inconnu"))));
+    }
+
+    @Test
+    void accessDeniedIsAGeneric403() throws Exception {
+        mvc.perform(get("/denied"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("interne"))));
     }
 }
