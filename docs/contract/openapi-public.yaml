@@ -1,9 +1,11 @@
 openapi: 3.1.0
 info:
   title: AgentShield AI - API publique
-  version: 1.0.0
+  version: 1.1.0
   description: |
-    API REST exposee par le backend Spring Boot au frontend React (contrat `contract-v1.0`, AS-S1-003).
+    API REST exposee par le backend Spring Boot au frontend React (contrat `contract-v1.1`).
+
+    v1.1 : `PipelineStep` porte `module`, `decision`, `score`, `reason`, `latencyMs` (AS-S1-020).
 
     **Conventions**
     - Authentification : cookie de session `HttpOnly` + `SameSite` pose par `POST /api/auth/login`.
@@ -597,12 +599,27 @@ components:
 
     PipelineStep:
       type: object
+      description: |
+        Etape du pipeline (ex. `input`, `tool_content`, `tool_call`, `output`). `module`, `decision`, `score`,
+        `reason` et `latencyMs` viennent des evenements renvoyes par l'agent (`POST /internal/agent/run`).
+        `verdict` est reserve : renseigne quand le service IA renvoie un Verdict complet pour l'etape.
       required: [name, status]
       properties:
         name: { type: string }
         status:
           type: string
           enum: [PENDING, RUNNING, DONE, SKIPPED, FAILED]
+        module:
+          oneOf:
+            - $ref: "#/components/schemas/GuardModule"
+            - type: "null"
+        decision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+        score: { type: [number, "null"], minimum: 0, maximum: 1 }
+        reason: { type: [string, "null"] }
+        latencyMs: { type: [number, "null"], minimum: 0 }
         verdict:
           oneOf:
             - $ref: "#/components/schemas/Verdict"
