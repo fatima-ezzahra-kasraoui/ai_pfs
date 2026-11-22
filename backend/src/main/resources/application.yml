@@ -5,6 +5,11 @@ spring:
     default: dev
   flyway:
     enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Le schema appartient a Flyway : Hibernate verifie seulement que les entites lui correspondent.
+      ddl-auto: validate
 
 server:
   port: 8080
