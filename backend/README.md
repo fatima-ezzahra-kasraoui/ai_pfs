@@ -9,10 +9,19 @@ JDK 21 et Maven 3.9+ (ou Docker, voir `docker-compose.yml` à la racine).
 ## Commandes
 ```bash
 cd backend
-mvn test                              # JUnit (gestionnaire d'erreurs, health)
-mvn spring-boot:run                   # profil dev, http://localhost:8080
+mvn test        # JUnit + tests d'intégration PostgreSQL (Testcontainers : Docker Desktop doit tourner)
+```
+Lancer l'application **depuis l'IDE** : exécuter `TestAgentShieldApplication` (dossier `src/test`). Elle démarre un
+PostgreSQL jetable via Testcontainers, sans configuration. Avec Docker Compose : voir `docker-compose.yml` à la racine.
+
+```bash
 curl localhost:8080/api/system/health # {"status":"UP"}
 ```
+
+## Base de données
+Schéma versionné par Flyway : `src/main/resources/db/migration/V1__init.sql` (users, simulations, events, approvals).
+Les valeurs d'énumération (rôles, décisions, statuts…) sont protégées par des contraintes `CHECK`. Ne jamais modifier une
+migration déjà fusionnée : ajouter `V2__...sql`.
 
 ## Structure (`ma.agentshield`)
 `auth` · `events` · `approvals` · `simulations` · `analytics` · `audit` · `integration` (client du service IA) · `config` (`ApiError`, `GlobalExceptionHandler`, CORS).

@@ -3,6 +3,8 @@ spring:
     name: agentshield-backend
   profiles:
     default: dev
+  flyway:
+    enabled: true
 
 server:
   port: 8080
@@ -28,3 +30,6 @@ agentshield:
     base-url: ${AI_SERVICE_URL:http://localhost:8000}
     service-key: ${AI_SERVICE_KEY:change-me-dev-only}
     timeout-ms: 10000
+
+# La base vient des variables SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD (docker compose, voir .env.example).
+# Hors Docker, lancer TestAgentShieldApplication (src/test) : il demarre un PostgreSQL jetable.
