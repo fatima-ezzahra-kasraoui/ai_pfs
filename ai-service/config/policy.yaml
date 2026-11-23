@@ -1,21 +1,51 @@
-# Valeurs de départ (Annexe A du dossier). Propriétaire : É2 (chargeur, moteur).
+# Valeurs de départ (Annexe A du dossier). Propriétaire : É2 (chargeur core/policy.py, moteur core/engine.py).
 # Les seuils marqués TEMPORARY sont provisoires jusqu'au réglage sur la validation
 # (AS-S4-001, `python -m evaluation.tune_thresholds`) puis gel (tag thresholds-frozen).
+# Le fichier est validé au chargement (clés inconnues refusées) et rechargé à chaud : voir app/core/policy.py.
 thresholds:                  # TEMPORARY
-  injection_block: 0.90      # score > 0.90 -> BLOCK
-  injection_review: 0.50     # 0.50 à 0.90 -> SANITIZE ou CONFIRM
-  coherence_min: 0.40        # similarité action/demande minimale
+  injection_block: 0.90      # score >= 0.90 -> BLOCK (borne incluse : alignée sur risk_from_score et sur evaluation/)
+  injection_review: 0.50     # 0.50 <= score < 0.90 -> action de revue (decisions.review_action)
+  coherence_min: 0.40        # similarité action/demande minimale (embeddings ou LLM juge)
+  coherence_min_lexical: 0.10  # similarité LEXICALE (TF-IDF, repli non sémantique) : non comparable à coherence_min
 tools:
-  read_email: { risk: low, allowed: true }
-  browse_web: { risk: low, allowed: true }
-  read_file: { risk: low, allowed: true }
-  send_email: { risk: medium, allowed: true, confirm_if_unknown_recipient: true }
-  delete_file: { risk: high, allowed: true, require_confirmation: true }
+  read_email: { risk: low, allowed: true, allowed_params: [email_id] }
+  browse_web: { risk: low, allowed: true, allowed_params: [url] }
+  read_file: { risk: low, allowed: true, allowed_params: [path] }
+  send_email: { risk: medium, allowed: true, allowed_params: [to, subject, body], confirm_if_unknown_recipient: true }
+  delete_file: { risk: high, allowed: true, allowed_params: [path], require_confirmation: true }
+parameters:
+  known_recipient_domains: [societe.test]   # domaines exacts (les sous-domaines ne sont pas connus)
+  known_recipients: []                      # adresses exactes supplémentaires
+  # motifs fnmatch (« * » traverse « / ») appliqués au chemin normalisé : absolu, minuscules, « / »
+  sensitive_paths:
+    - "*/.env"
+    - "*/.env.*"
+    - "*/.ssh/*"
+    - "*/id_rsa*"
+    - "*.pem"
+    - "*.key"
+    - "/etc/*"
+    - "/proc/*"
+    - "/sys/*"
+    - "/root/*"
+    - "/windows/*"
+    - "/boot/*"
+  important_files: [/documents/rapport_final.docx]   # fichiers marqués importants (traités comme chemins sensibles)
+decisions:
+  review_action:             # action quand le score est dans la bande de revue
+    input: CONFIRM
+    tool_call: CONFIRM
+    tool_result: SANITIZE
+    final_response: SANITIZE
+  on_sensitive_path: CONFIRM
+  on_unknown_recipient: CONFIRM
+  on_incoherent_action: CONFIRM
+  on_incoherent_after_indirect_injection: BLOCK   # hypothèse à valider (R2)
+  on_coherence_unavailable: CONFIRM               # cohérence invérifiable -> on ne présume pas qu'elle est bonne
 output:
   mask_patterns: [api_key, iban, credit_card]
   canary_tokens: [sk-FAKE-1234]
   on_secret_detected: SANITIZE
   on_canary_in_outgoing_tool: BLOCK
 logging:
-  db_path: agentshield.db     # conservé tel qu'en Annexe A ; le service IA n'écrit pas en base (Spring persiste)
   mask_excerpts: true

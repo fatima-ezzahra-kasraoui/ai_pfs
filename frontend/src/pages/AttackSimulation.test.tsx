@@ -89,7 +89,10 @@ describe("mode mock : bandeau « Données de démonstration »", () => {
     await waitFor(() => expect(within(withShield).getByText("Attaque neutralisée")).toBeInTheDocument());
     expect(within(withShield).getAllByText("Bloqué").length).toBeGreaterThan(0);
     expect(within(withShield).getByText("Guard A")).toBeInTheDocument();
-    expect(within(withShield).getByLabelText("Score")).toHaveTextContent(/^\d,\d{2}$/);
+    expect(within(withShield).getByText("Guard ENGINE")).toBeInTheDocument(); // le moteur de décision est une étape exécutée
+    const scores = within(withShield).getAllByLabelText("Score");
+    expect(scores).toHaveLength(2); // Guard A et verdict ENGINE
+    scores.forEach((el) => expect(el).toHaveTextContent(/^\d,\d{2}$/));
     expect(within(without).getByText("Detection Score").nextElementSibling).toHaveTextContent("—"); // aucun guard : pas de score
   });
 

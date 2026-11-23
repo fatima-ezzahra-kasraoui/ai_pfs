@@ -33,22 +33,32 @@ SCENARIOS = {
 SEVERITY = {"ALLOW": 0, "SANITIZE": 1, "CONFIRM": 2, "BLOCK": 3}
 
 
+def _strip(verdict: dict) -> dict:
+    v = dict(verdict)
+    v.pop("latencyMs", None)  # temps mesuré : non reproductible, inutile à l'affichage
+    return v
+
+
 def verdict_for(events, stage):
-    """Verdict du pas : le plus sévère des contrôles de l'étape (Verdict réel du guard ; Guard C : verdict de démonstration)."""
+    """Verdict du pas : celui du guard le plus sévère de l'étape (Verdict réel ; sa décision est celle que le moteur lui a attribuée)."""
     picked = None
     for e in events:
-        if e.stage == stage and (picked is None or SEVERITY[e.decision] > SEVERITY[picked.decision]):
+        if e.stage == stage and e.module != "ENGINE" and e.verdict is not None and (picked is None or SEVERITY[e.decision] > SEVERITY[picked.decision]):
             picked = e
     if picked is None:
         return None
-    if picked.verdict is not None:
-        v = dict(picked.verdict)
-        v.pop("latencyMs", None)  # temps mesuré : non reproductible, inutile à l'affichage
-        v["decision"] = picked.decision  # décision de référence (le moteur la produira au Sprint 2)
-        return v
-    risky = picked.decision != "ALLOW"  # Guard C minimal : pas de Verdict natif
-    return {"module": "C", "attackType": "tool_abuse" if risky else "none", "score": 0.9 if risky else 0.1, "riskLevel": "high" if risky else "low",
-            "decision": picked.decision, "reason": f"{picked.reason} (verdict de démonstration)", "degraded": True}
+    v = _strip(picked.verdict)
+    v["decision"] = picked.decision  # décision du moteur pour la contribution de ce guard (le Verdict du guard porte decision = null)
+    return v
+
+
+def engine_verdict(events):
+    """Verdict ENGINE le plus sévère de l'exécution (étape « Moteur de décision »)."""
+    picked = None
+    for e in events:
+        if e.module == "ENGINE" and e.verdict is not None and (picked is None or SEVERITY[e.decision] > SEVERITY[picked.decision]):
+            picked = e
+    return _strip(picked.verdict) if picked else None
 
 
 def to_run(mode, outcome, attack_expected):
@@ -60,8 +70,9 @@ def to_run(mode, outcome, attack_expected):
     steps = []
     for i, name in enumerate(STEPS):
         stage = {0: "input", 2: "tool_call", 3: "tool_content", 5: "final_response"}.get(i)
-        if i == 4:  # moteur de décision : non branché avant AS-S2-011
-            status, v = "SKIPPED", None
+        if i == 4:  # moteur de décision : il a décidé à chaque étape contrôlée (absent sans protection)
+            v = engine_verdict(ev) if protected else None
+            status = "DONE" if v else "SKIPPED"
         elif i == 1:
             status, v = ("SKIPPED" if blocked else "DONE"), None
         elif i in (2, 3):
@@ -83,7 +94,7 @@ def render() -> str:
     fixtures = {}
     for sid, (demo, message) in SCENARIOS.items():
         s = catalog[demo] if demo else None
-        base = dict(message=s["user_message"] if s else message, scenario_id=demo, tool_fixture=s["tool"] if s else None, confirmation_policy="auto", seed=42)
+        base = dict(message=s["user_message"] if s else message, scenario_id=demo, tool_fixture=s["tool"] if s else None, confirmation_policy="auto", seed=42, correlation_id=f"mock-{sid}")
         runs = {m: svc.run(RunInput(config="e1" if m == "unprotected" else "e3", **base)) for m in ("unprotected", "protected")}
         fixtures[sid] = {m: to_run(m, o, attack_expected=s is not None) for m, o in runs.items()}
     body = json.dumps(fixtures, ensure_ascii=False, indent=2)

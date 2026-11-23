@@ -11,6 +11,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..agent.service import AgentService, ConfigurationError, PolicyUnavailableError, RunInput
+from ..core.config import PRODUCTION_LIKE_ENVS
 from .agent_schemas import AgentRunRequest, AgentRunResponse
 from .security import require_service_key
 
@@ -27,6 +28,8 @@ def _agent(request: Request) -> AgentService:
 @router.post("/run", response_model=AgentRunResponse, response_model_by_alias=True)
 def run_agent(body: AgentRunRequest, request: Request) -> dict:
     agent = _agent(request)
+    if body.confirmation_policy in {"approve", "auto"} and request.app.state.settings.env in PRODUCTION_LIKE_ENVS:
+        raise HTTPException(status_code=422, detail="confirmationPolicy approve/auto simule une approbation : interdit en recette et en production")
     run_input = RunInput(
         message=body.message, scenario_id=body.scenario_id,
         tool_fixture=body.tool_fixture.model_dump() if body.tool_fixture else None,
