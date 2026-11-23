@@ -4,14 +4,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import ma.agentshield.support.PostgresTestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
+@Import(PostgresTestConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class HealthEndpointTest {
@@ -28,7 +32,15 @@ class HealthEndpointTest {
     }
 
     @Test
-    void unknownRouteReturnsJsonNotFoundWithoutStacktrace() throws Exception {
+    void unknownRouteWithoutSessionIs401NotAnInformationLeak() throws Exception {
+        mvc.perform(get("/api/does-not-exist"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    }
+
+    @Test
+    @WithMockUser
+    void unknownRouteWithASessionReturnsJsonNotFoundWithoutStacktrace() throws Exception {
         mvc.perform(get("/api/does-not-exist"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"));
