@@ -16,12 +16,15 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from ..llm.errors import LLMError
+import httpx
+
+from ..llm.errors import LLMConfigError, LLMError
 from ..llm.types import Message
 
 log = logging.getLogger("agentshield.coherence")
@@ -128,7 +131,7 @@ class EmbeddingCoherence:
             raise
         except Exception as exc:  # noqa: BLE001
             raise CoherenceUnavailable(f"échec de l'encodage ({type(exc).__name__})") from exc
-        if norm == 0:
+        if not math.isfinite(dot) or not math.isfinite(norm) or norm == 0:
             raise CoherenceUnavailable("embedding nul")
         return CoherenceResult(min(1.0, max(0.0, dot / norm)), self.name, True, self.model_name or "encodeur injecté")
 
@@ -191,12 +194,51 @@ class ChainedCoherence:
         return CoherenceResult(None, "unavailable", False, "; ".join(reasons) or "aucune mesure configurée")
 
 
-def default_checker(embedding_model: str = "", llm_judge=None) -> ChainedCoherence:
+def default_checker(embedding_model: str = "", llm_judge=None, *, provider: str = "sentence_transformers", base_url: str = "http://localhost:11434", timeout_s: float = 120.0) -> ChainedCoherence:
     """Chaîne par défaut : embeddings (si un modèle est configuré) → juge LLM (si fourni) → repli lexical."""
     checkers: list[CoherenceChecker] = []
-    if embedding_model:
+    if provider not in {"sentence_transformers", "ollama"}:
+        raise LLMConfigError("COHERENCE_EMBEDDING_PROVIDER inconnu")
+    if provider == "ollama":
+        encoder = OllamaEncoder(embedding_model, base_url, timeout_s)
+        checkers.append(EmbeddingCoherence(embedding_model, encode=encoder))
+    elif embedding_model:
         checkers.append(EmbeddingCoherence(embedding_model))
     if llm_judge is not None:
         checkers.append(LLMJudgeCoherence(llm_judge))
     checkers.append(TfidfCoherence())
     return ChainedCoherence(checkers)
+
+
+class OllamaEncoder:
+    """Encodeur HTTP local, sans journalisation des textes ni des réponses."""
+
+    def __init__(self, model: str, base_url: str, timeout_s: float, transport: httpx.BaseTransport | None = None):
+        try:
+            url = httpx.URL(base_url)
+        except httpx.InvalidURL as exc:
+            raise LLMConfigError("URL embeddings Ollama invalide") from exc
+        if not model or url.scheme not in {"http", "https"} or not url.host or not math.isfinite(timeout_s) or timeout_s <= 0:
+            raise LLMConfigError("configuration embeddings Ollama invalide")
+        self.model = model
+        self.url = base_url.rstrip("/") + "/api/embed"
+        self.timeout_s = timeout_s
+        self.transport = transport
+
+    def __call__(self, texts: list[str]) -> list[list[float]]:
+        try:
+            with httpx.Client(timeout=self.timeout_s, transport=self.transport, trust_env=False) as client:
+                response = client.post(self.url, json={"model": self.model, "input": texts, "truncate": False})
+                response.raise_for_status()
+                vectors = response.json()["embeddings"]
+            if not isinstance(vectors, list) or len(vectors) != len(texts) or not vectors:
+                raise ValueError("nombre de vecteurs invalide")
+            if any(not isinstance(v, list) or not v for v in vectors):
+                raise ValueError("vecteur invalide")
+            if any(len(v) != len(vectors[0]) for v in vectors):
+                raise ValueError("dimensions incompatibles")
+            if any(isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) for v in vectors for x in v):
+                raise ValueError("valeur non numérique ou non finie")
+            return vectors
+        except (httpx.HTTPError, ValueError, KeyError, TypeError, OverflowError) as exc:
+            raise CoherenceUnavailable(f"embeddings Ollama indisponibles ({type(exc).__name__})") from exc

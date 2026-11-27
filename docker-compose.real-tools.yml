@@ -1,0 +1,38 @@
+services:
+  ai-service:
+    environment:
+      AGENT_REAL_TOOLS: 'true'
+    volumes:
+      - ./real-tools-files:/srv/real-files:ro
+    depends_on:
+      mailpit:
+        condition: service_healthy
+  mailpit:
+    image: axllent/mailpit:v1.27.8
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: '100'
+    volumes:
+      - mailpit_data:/data
+    ports:
+      - '127.0.0.1:8025:8025'
+    networks: [internal]
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  real-web:
+    image: python:3.12-slim
+    command: ['python','/srv/server.py']
+    user: '65534:65534'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    volumes:
+      - ./infra/real-web/server.py:/srv/server.py:ro
+    networks: [internal, real_web_egress]
+networks:
+  real_web_egress: {}
+volumes:
+  mailpit_data:

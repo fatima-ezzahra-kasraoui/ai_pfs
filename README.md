@@ -57,3 +57,7 @@ Tant qu'aucun résultat n'existe, l'interface affiche « Évaluation à venir »
 
 Avancement et guide d'équipe : `docs/AVANCEMENT.md`.
 Voir `CONTRIBUTING.md` pour les branches, commits et Pull Requests.
+
+## Modèles locaux Ollama
+
+Voir [le guide Windows / Docker Desktop](docs/OLLAMA_LOCAL.md) pour activer Ministral et Qwen sans modifier le mode mock par défaut.

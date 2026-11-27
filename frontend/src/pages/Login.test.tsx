@@ -33,7 +33,7 @@ describe("Login", () => {
     const routes = {
       "POST /api/auth/login": { body: ANALYST },
       "GET /api/dashboard/overview": { body: { totalRequests: 0, attacksDetected: 0, blockedActions: 0, sanitizedActions: 0, pendingConfirmations: 0, asr: null, attacksOverTime: [], decisions: {}, byCategory: {}, bySeverity: {}, recent: [] } },
-      "GET /api/events": { body: { items: [], page: 0, size: 20, total: 0 } },
+      "GET /api/audit/events": { body: { items: [], page: 0, size: 20, total: 0 } },
     };
     // /audit demandée sans session : redirection vers /login puis retour sur /audit
     const { api } = renderApp("/audit", routes, { loggedIn: false });

@@ -20,10 +20,16 @@ const base: Overview = {
 const health: SystemHealth = { services: [{ name: "Backend", status: "UP" }, { name: "Service IA", status: "DOWN", detail: "timeout" }] };
 const routes = (o: Partial<Overview> = {}, h: SystemHealth = health) => ({
   "GET /api/dashboard/overview": { body: { ...base, ...o } },
-  "GET /api/system/health": { body: h },
+  "GET /api/system/services": { body: h },
 });
 
 describe("Overview", () => {
+  it("une sonde sans services affiche une erreur sans faire planter la page", async () => {
+    renderApp("/", { ...routes(), "GET /api/system/services": { body: { status: "UP" } } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("Impossible de charger");
+    expect(await screen.findByRole("heading", { name: /Vue d'ensemble/ })).toBeInTheDocument();
+  });
+
   it("affiche l'état de chargement puis les six cartes issues du backend", async () => {
     renderApp("/", routes());
     expect((await screen.findAllByText("Chargement…")).length).toBeGreaterThan(0);
@@ -64,7 +70,7 @@ describe("Overview", () => {
     let calls = 0;
     renderApp("/", {
       "GET /api/dashboard/overview": () => (++calls === 1 ? { status: 500 } : { body: base }),
-      "GET /api/system/health": { body: health },
+      "GET /api/system/services": { body: health },
     });
     expect(await screen.findByRole("alert")).toHaveTextContent("Impossible de charger");
     await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));

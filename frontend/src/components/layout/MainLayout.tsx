@@ -6,7 +6,7 @@ import { Sidebar } from "./Sidebar";
 export function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <div className="flex min-h-screen">
+    <div className="as-shell flex min-h-screen">
       <a className="skip" href="#main">
         Aller au contenu
       </a>

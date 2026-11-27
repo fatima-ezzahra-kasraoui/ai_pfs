@@ -1,5 +1,5 @@
 import type { AnalyticsMetrics, AuditPage, AuditQuery, Overview, PolicyView, SessionUser, SystemHealth } from "../types";
-import { request } from "./http";
+import { ApiError, request } from "./http";
 
 export const authService = {
   login: (username: string, password: string) => request<SessionUser>("/api/auth/login", { method: "POST", json: { username, password } }),
@@ -8,11 +8,24 @@ export const authService = {
 };
 
 export const dashboardService = {
-  overview: (signal?: AbortSignal) => request<Overview>("/api/dashboard/overview", {}, signal),
+  overview: async (signal?: AbortSignal) => {
+    const data = await request<Overview>("/api/dashboard/overview", {}, signal);
+    if (!data || !Array.isArray(data.recent) || !Array.isArray(data.attacksOverTime)
+        || ![data.decisions, data.byCategory, data.bySeverity].every(v => v && typeof v === "object" && !Array.isArray(v))) {
+      throw new ApiError(502, "Réponse du tableau de bord incompatible");
+    }
+    return data;
+  },
 };
 
 export const systemService = {
-  health: (signal?: AbortSignal) => request<SystemHealth>("/api/system/health", {}, signal),
+  health: async (signal?: AbortSignal) => {
+    const data = await request<SystemHealth>("/api/system/services", {}, signal);
+    if (!Array.isArray(data?.services) || !data.services.every(s => s && typeof s.name === "string" && ["UP", "DOWN", "DEGRADED"].includes(s.status))) {
+      throw new ApiError(502, "Réponse de santé incompatible");
+    }
+    return data;
+  },
 };
 
 export const auditService = {
@@ -21,7 +34,7 @@ export const auditService = {
     if (q.search) params.set("search", q.search);
     if (q.module) params.set("module", q.module);
     if (q.decision) params.set("decision", q.decision);
-    return request<AuditPage>(`/api/events?${params.toString()}`, {}, signal);
+    return request<AuditPage>(`/api/audit/events?${params.toString()}`, {}, signal);
   },
 };
 

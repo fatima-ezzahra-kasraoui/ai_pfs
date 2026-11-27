@@ -37,6 +37,10 @@ class Settings:
     coherence_llm_judge: bool = False  # COHERENCE_LLM_JUDGE=true : juge LLM en plan B (ignoré avec le LLM simulé)
     stub: bool = False  # AI_STUB=true : faux service IA contractuel (fixtures), interdit en recette et en production
 
+    coherence_embedding_provider: str = "sentence_transformers"
+    coherence_embedding_url: str = "http://localhost:11434"
+    coherence_embedding_timeout_s: float = 120.0
+
     def validate(self) -> None:
         """Échec fermé au démarrage : le stub ne peut pas être actif dans un profil de recette ou de production."""
         if self.stub and self.env in STUB_FORBIDDEN_ENVS:
@@ -55,5 +59,8 @@ class Settings:
             llm=LLMConfig.from_env(),
             coherence_embedding_model=os.environ.get("COHERENCE_EMBEDDING_MODEL", "").strip(),
             coherence_llm_judge=_flag("COHERENCE_LLM_JUDGE", False),
+            coherence_embedding_provider=os.environ.get("COHERENCE_EMBEDDING_PROVIDER", "sentence_transformers").strip().lower(),
+            coherence_embedding_url=os.environ.get("COHERENCE_EMBEDDING_URL", "http://localhost:11434").strip(),
+            coherence_embedding_timeout_s=float(os.environ.get("COHERENCE_EMBEDDING_TIMEOUT_S", "120")),
             stub=_flag("AI_STUB", False),
         )

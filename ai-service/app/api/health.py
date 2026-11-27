@@ -30,6 +30,15 @@ def internal_health(request: Request) -> dict:
     return health_body(request.app)
 
 
+@protected.get("/policy")
+def internal_policy(request: Request) -> dict:
+    policy = request.app.state.policy
+    policy = policy.get() if isinstance(policy, PolicyStore) else policy
+    # Do not disclose canary values or arbitrary parameter rules to browsers.
+    return policy.model_dump(mode="json", include={"thresholds": True, "tools": True,
+        "output": {"mask_patterns", "on_secret_detected", "on_canary_in_outgoing_tool"}})
+
+
 @public.get("/health")
 def container_health(request: Request) -> dict:
     """Healthcheck du conteneur (Docker Compose, sans clé : n'expose aucun secret)."""

@@ -115,18 +115,72 @@ class PresidioDetector:
     def __init__(self, languages: tuple[str, ...] = ("en", "fr")) -> None:
         from presidio_analyzer import AnalyzerEngine  # import paresseux
 
-        self._engine = AnalyzerEngine()
+        from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+        configuration = {
+            "nlp_engine_name": "spacy",
+            "models": [
+                {
+                    "lang_code": "en",
+                    "model_name": "en_core_web_lg",
+                },
+                {
+                    "lang_code": "fr",
+                    "model_name": "fr_core_news_md",
+                },
+            ],
+        }
+
+        provider = NlpEngineProvider(
+            nlp_configuration=configuration
+        )
+
+        self._engine = AnalyzerEngine(
+            nlp_engine=provider.create_engine(),
+            supported_languages=list(languages),
+        )
         self._languages = languages
 
+        from lingua import Language, LanguageDetectorBuilder
+
+        self._language_detector = (
+            LanguageDetectorBuilder.from_languages(
+                Language.ENGLISH,
+                Language.FRENCH,
+            ).build()
+        )
+
+
     def detect(self, text: str) -> list[Finding]:
+        if not text.strip():
+            return []
+
+        language = self._language_detector.detect_language_of(text)
+
+        languages = self._languages
+
+        if language is not None:
+            lang = language.iso_code_639_1.name.lower()
+            if lang in self._languages:
+                languages = (lang,)
+
         out: list[Finding] = []
-        for lang in self._languages:
-            try:
-                results = self._engine.analyze(text=text, language=lang, entities=["PERSON"])
-            except Exception:  # noqa: BLE001 - langue non supportée par le moteur chargé
-                continue
-            out += [Finding("person", r.start, r.end) for r in results if r.score >= 0.6]
-        return out
+
+        for lang in languages:
+            results = self._engine.analyze(
+                text=text,
+                language=lang,
+                entities=["PERSON"],
+            )
+
+            out.extend(
+                Finding("person", r.start, r.end)
+                for r in results
+                if r.score >= 0.6
+            )
+
+        return _fold_overlaps(out)
+
 
 
 def try_load_presidio() -> PersonDetector | None:

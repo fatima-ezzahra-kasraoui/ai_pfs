@@ -52,7 +52,7 @@ def create_app(settings: Settings | None = None, guards: dict | None = None, res
     try:
         client = llm if llm is not None else build_client(settings.llm)
         judge = client if settings.coherence_llm_judge and not client.simulated else None
-        coherence = default_checker(settings.coherence_embedding_model, judge)
+        coherence = default_checker(settings.coherence_embedding_model, judge, provider=settings.coherence_embedding_provider, base_url=settings.coherence_embedding_url, timeout_s=settings.coherence_embedding_timeout_s)
         app.state.agent = AgentService(client, app.state.guards, max_steps=settings.agent_max_steps, policy=app.state.policy, coherence=coherence)
         app.state.llm_info = {"provider": client.name, "simulated": client.simulated}
     except LLMConfigError as exc:
