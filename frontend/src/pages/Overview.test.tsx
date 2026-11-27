@@ -27,7 +27,7 @@ describe("Overview", () => {
   it("une sonde sans services affiche une erreur sans faire planter la page", async () => {
     renderApp("/", { ...routes(), "GET /api/system/services": { body: { status: "UP" } } });
     expect(await screen.findByRole("alert")).toHaveTextContent("Impossible de charger");
-    expect(await screen.findByRole("heading", { name: /Vue d'ensemble/ })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Security Command Center" })).toBeInTheDocument();
   });
 
   it("affiche l'état de chargement puis les six cartes issues du backend", async () => {

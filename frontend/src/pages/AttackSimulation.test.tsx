@@ -21,6 +21,7 @@ const simulationCalls = (api: ApiMock) => api.calls.filter((c) => c.url.includes
 const launch = async () => userEvent.click(await screen.findByRole("button", { name: "Lancer la simulation" }));
 
 beforeEach(() => {
+  vi.stubEnv("VITE_SIMULATION_MOCK", "true");
   vi.stubEnv("VITE_SIMULATION_POLL_MS", "5");
   mockSimulationBackend.reset();
 });

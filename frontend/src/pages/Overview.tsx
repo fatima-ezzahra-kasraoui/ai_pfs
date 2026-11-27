@@ -29,14 +29,31 @@ export default function Overview() {
               <StatCard label="Taux de réussite des attaques (ASR)" value={d.asr === null ? null : formatPercent(d.asr)} placeholder="Évaluation à venir" hint="Mesuré par campagne d'évaluation" />
             </div>
             <OverviewCharts data={d} />
-            <div className="as-bottom"><section className="card" aria-label="Activité récente">
-              <div className="flex items-center justify-between gap-2"><h3>Activité récente</h3><Link to="/audit" className="text-xs">Journal d’audit →</Link></div>
-              <RecentActivity events={d.recent} />
-            </section><aside><ServiceStatus/><section className="card"><h3>Performances des modèles</h3><p className="muted text-sm">Télémétrie non fournie par l’API actuelle.</p><Link to="/analytics" className="text-sm">Consulter les évaluations</Link></section></aside></div>
           </>
         )}
       </AsyncView>
-      {(state.status !== "ready" || hasNoActivity(state.data)) && <ServiceStatus />}
+
+      <div className={state.status === "ready" && !hasNoActivity(state.data) ? "as-bottom" : undefined}>
+        {state.status === "ready" && !hasNoActivity(state.data) && (
+          <section className="card" aria-label="Activit? r?cente">
+            <div className="flex items-center justify-between gap-2">
+              <h3>Activit? r?cente</h3>
+              <Link to="/audit" className="text-xs">Journal d?audit ?</Link>
+            </div>
+            <RecentActivity events={state.data.recent} />
+          </section>
+        )}
+        <aside>
+          <ServiceStatus />
+          {state.status === "ready" && !hasNoActivity(state.data) && (
+            <section className="card">
+              <h3>Performances des mod?les</h3>
+              <p className="muted text-sm">T?l?m?trie non fournie par l?API actuelle.</p>
+              <Link to="/analytics" className="text-sm">Consulter les ?valuations</Link>
+            </section>
+          )}
+        </aside>
+      </div>
     </section>
   );
 }
