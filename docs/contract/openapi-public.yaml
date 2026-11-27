@@ -309,7 +309,6 @@ paths:
       operationId: listAuditEvents
       summary: Journal d'audit
       x-roles: [ANALYST, ADMIN]
-      x-to-confirm: Le frontend appelle actuellement `/api/events` (frontend/src/services/api.ts) ; l'aligner sur ce chemin.
       parameters:
         - { $ref: "#/components/parameters/Page" }
         - { $ref: "#/components/parameters/Size" }
@@ -348,8 +347,8 @@ paths:
       operationId: getHealth
       summary: Etat de sante
       description: |
-        Publique (sonde Docker). Sans session : `{status}` uniquement. Avec session : `services` detaille l'etat
-        de chaque composant ; un service n'est `UP` que sur preuve.
+        Publique (sonde Docker Actuator). Retourne le statut du backend uniquement.
+        Pour les details authentifies, utiliser `/api/system/services`.
       security: []
       x-roles: []
       responses:
@@ -363,6 +362,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SystemHealth" }
+
+  /api/system/services:
+    get:
+      tags: [system]
+      operationId: getServiceDetails
+      summary: Sondes des composants (session requise)
+      x-roles: [ANALYST, APPROVER, ADMIN]
+      responses:
+        "200":
+          description: Statuts observes, sans preuve d'inference.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemHealth" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
 components:
   securitySchemes:

@@ -49,6 +49,11 @@ public class AiServiceClient {
         return post("/internal/agent/run", request, AgentRunResponse.class, id);
     }
 
+    /** Full internal response; callers must project safe fields before exposing it. */
+    public com.fasterxml.jackson.databind.JsonNode runWorkspace(AgentRunRequest request, String correlationId) {
+        return post("/internal/agent/run", request, com.fasterxml.jackson.databind.JsonNode.class, correlationId);
+    }
+
     private <T> T post(String path, Object body, Class<T> responseType, String correlationId) {
         try {
             T result = client.post()

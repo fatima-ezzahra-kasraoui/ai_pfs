@@ -8,7 +8,7 @@ const ev = (i: number, over: Partial<AuditEvent> = {}): AuditEvent => ({
   id: `evt-${i}`, timestamp: "2026-11-11T10:00:00Z", actor: "agent-1", action: "analyze", module: "A", decision: "BLOCK", result: "bloqué", reference: `ref-${i}`, details: { reason: "règle override_fr" }, ...over,
 });
 const page = (items: AuditEvent[], over: Partial<AuditPage> = {}): AuditPage => ({ items, page: 0, size: 20, total: items.length, ...over });
-const route = (body: AuditPage | (() => { body: AuditPage })) => ({ "GET /api/events": typeof body === "function" ? body : { body } });
+const route = (body: AuditPage | (() => { body: AuditPage })) => ({ "GET /api/audit/events": typeof body === "function" ? body : { body } });
 const queryOf = (url: string) => new URLSearchParams(url.split("?")[1]);
 
 describe("AuditTrail", () => {
@@ -53,7 +53,7 @@ describe("AuditTrail", () => {
     await userEvent.selectOptions(screen.getByLabelText("Décision"), "BLOCK");
     await userEvent.click(screen.getByRole("button", { name: "Filtrer" }));
     await screen.findByRole("table");
-    const last = queryOf(api.calls.filter((c) => c.url.startsWith("/api/events")).at(-1)!.url);
+    const last = queryOf(api.calls.filter((c) => c.url.startsWith("/api/audit/events")).at(-1)!.url);
     expect(Object.fromEntries(last)).toMatchObject({ search: "ref-9", module: "D", decision: "BLOCK", page: "0" });
   });
 
@@ -63,7 +63,7 @@ describe("AuditTrail", () => {
     expect(screen.getByRole("button", { name: "Précédent" })).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Suivant" }));
     await screen.findByText(/Page 2 sur 3/);
-    expect(queryOf(api.calls.filter((c) => c.url.startsWith("/api/events")).at(-1)!.url).get("page")).toBe("1");
+    expect(queryOf(api.calls.filter((c) => c.url.startsWith("/api/audit/events")).at(-1)!.url).get("page")).toBe("1");
   });
 
   it("ouvre le détail d'un événement et le ferme", async () => {
@@ -89,6 +89,6 @@ describe("AuditTrail", () => {
     const { api } = renderApp("/audit?event=evt-42", route(page([ev(42)])));
     await screen.findByRole("table");
     expect(screen.getByLabelText("Recherche")).toHaveValue("evt-42");
-    expect(queryOf(api.calls.find((c) => c.url.startsWith("/api/events"))!.url).get("search")).toBe("evt-42");
+    expect(queryOf(api.calls.find((c) => c.url.startsWith("/api/audit/events"))!.url).get("search")).toBe("evt-42");
   });
 });

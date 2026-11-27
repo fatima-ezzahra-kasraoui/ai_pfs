@@ -58,7 +58,10 @@ class AgentRunRequest(BaseModel):
     config: str | None = Field(default=None, max_length=32)
     seed: int | None = Field(default=None, ge=0, le=2**31 - 1)
     correlation_id: str | None = Field(default=None, alias="correlationId", max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
-    confirmation_policy: Literal["deny", "approve", "auto"] = Field(default="deny", alias="confirmationPolicy")
+    confirmation_policy: Literal["pending", "deny", "approve", "auto"] = Field(
+        default="pending", alias="confirmationPolicy",
+        description="pending (défaut) : action à confirmer suspendue, rien d'exécuté ; deny : refus ; approve / auto : SIMULATION d'approbation, interdites en recette et en production.",
+    )
     attack_goal: Goal | None = Field(default=None, alias="attackGoal")
     legit_goal: Goal | None = Field(default=None, alias="legitGoal")
 
@@ -86,7 +89,7 @@ class AgentEvent(BaseModel):
     reason: str = ""
     latency_ms: float = Field(default=0.0, alias="latencyMs")
     verdict: VerdictModel | None = None
-    confirmation: Literal["approved", "denied"] | None = None
+    confirmation: Literal["approved", "denied", "pending"] | None = None
 
 
 class ToolCallRecord(BaseModel):
@@ -117,6 +120,35 @@ class AgentInfo(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class PendingAction(BaseModel):
+    """Action suspendue en attente de confirmation (AS-S2-017). ``arguments`` : paramètres EXACTS demandés par l'agent."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    action_id: str = Field(alias="actionId")
+    kind: Literal["tool_call", "message"]
+    tool: ToolName | None = None
+    arguments: dict[str, Any] | None = None
+    risk_level: Literal["low", "medium", "high"] = Field(alias="riskLevel")
+    reason: str
+    correlation_id: str = Field(alias="correlationId")
+    status: Literal["pending"]
+
+
+class ToolAttempt(BaseModel):
+    """Appel d'outil demandé par le LLM, exécuté ou non. ``arguments`` est null pour un appel BLOQUÉ (il pourrait contenir un secret)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    tool: str
+    arguments: dict[str, Any] | None = None
+    decision: DecisionName | None = None
+    status: Literal["executed", "blocked", "refused", "pending", "error", "skipped"]
+    executed: bool
+    reason: str = ""
+    rule: str | None = None
+
+
 class AgentRunResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -128,7 +160,7 @@ class AgentRunResponse(BaseModel):
     seed: int | None = None
     response: str
     final_decision: DecisionName = Field(alias="finalDecision")
-    halted: Literal["input_blocked", "max_steps", "llm_error"] | None = None
+    halted: Literal["input_blocked", "awaiting_confirmation", "max_steps", "llm_error"] | None = None
     error: str | None = None
     confirmations: int = Field(ge=0)
     attack_succeeded: bool | None = Field(default=None, alias="attackSucceeded", description="null : aucun objectif d'attaque connu.")
@@ -138,5 +170,8 @@ class AgentRunResponse(BaseModel):
     events: list[AgentEvent]
     tool_calls: list[ToolCallRecord] = Field(alias="toolCalls")
     simulated_state: SimulatedState = Field(alias="simulatedState")
+    verdicts: list[VerdictModel] = Field(description="Verdicts ordonnés de l'exécution (guards puis ENGINE, étape par étape), tous avec le même correlationId.")
+    pending: PendingAction | None = None
+    tool_attempts: list[ToolAttempt] = Field(alias="toolAttempts")
     llm: LLMInfo
     agent: AgentInfo

@@ -1,0 +1,56 @@
+openapi: 3.1.0
+info:
+  title: AgentShield Workspace API
+  version: 0.1.0
+security:
+  - session: []
+paths:
+  /api/workspace/conversations:
+    get:
+      responses:
+        '200': {description: Owned active conversations (latest 100)}
+    post:
+      responses:
+        '200': {description: Created conversation, id and title}
+  /api/workspace/conversations/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [title], properties: {title: {type: string, maxLength: 100}}}
+      responses:
+        '204': {description: Renamed}
+        '404': {description: Not found or not owned}
+    delete:
+      responses:
+        '204': {description: Archived, audit retained}
+        '404': {description: Not found or not owned}
+  /api/workspace/conversations/{id}/runs:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Latest 100 owned runs, oldest first}
+        '404': {description: Not found or not owned}
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId, message]
+              properties:
+                requestId: {type: string, format: uuid}
+                message: {type: string, minLength: 1, maxLength: 4000}
+      responses:
+        '200': {description: Protected E3 run with projected verdicts and sandbox tool statuses}
+        '404': {description: Not found or not owned}
+        '409': {description: Duplicate request or concurrent run}
+        '503': {description: Execution unavailable or unknown outcome; inspect history before retrying}
+components:
+  securitySchemes:
+    session: {type: apiKey, in: cookie, name: JSESSIONID}

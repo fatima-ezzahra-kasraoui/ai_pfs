@@ -55,7 +55,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "high",
             "decision": "BLOCK",
             "reason": "règles déclenchées : override_fr, override_en, reveal_fr, reveal_possessive, secret_possessive (exfiltration, override) ; mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-1",
             "degraded": true,
             "metadata": {
               "rules": [
@@ -93,8 +93,37 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
         },
         {
           "name": "Moteur de décision",
-          "status": "SKIPPED",
-          "verdict": null
+          "status": "DONE",
+          "verdict": {
+            "module": "ENGINE",
+            "attackType": "direct_injection",
+            "score": 0.98,
+            "riskLevel": "high",
+            "decision": "BLOCK",
+            "reason": "[T.block] score 0.98 ≥ seuil de blocage 0.90 : règles déclenchées : override_fr, override_en, reveal_fr, reveal_possessive, secret_possessive (exfiltration, override) ; mode dégradé : règles seules",
+            "correlationId": "mock-scenario-1",
+            "degraded": true,
+            "metadata": {
+              "stage": "input",
+              "rule": "T.block",
+              "escalated": false,
+              "canary": false,
+              "flags": [
+                "rule=T.block"
+              ],
+              "contributions": [
+                {
+                  "module": "A",
+                  "decision": "BLOCK",
+                  "rule": "T.block",
+                  "rules": [
+                    "T.block"
+                  ]
+                }
+              ],
+              "policy": "cdff6f5a420d"
+            }
+          }
         },
         {
           "name": "Réponse finale",
@@ -159,7 +188,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-2",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -185,11 +214,24 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
           "verdict": {
             "module": "C",
             "attackType": "none",
-            "score": 0.1,
+            "score": 0.0,
             "riskLevel": "low",
             "decision": "ALLOW",
-            "reason": "outil autorisé (verdict de démonstration)",
-            "degraded": true
+            "reason": "outil autorisé, paramètres conformes",
+            "correlationId": "mock-scenario-2",
+            "degraded": true,
+            "metadata": {
+              "tool": "read_email",
+              "toolRisk": "low",
+              "findings": [],
+              "coherence": {
+                "score": 0.1977,
+                "method": "tfidf-lexical",
+                "semantic": false,
+                "threshold": 0.1,
+                "coherent": true
+              }
+            }
           }
         },
         {
@@ -202,7 +244,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "high",
             "decision": "BLOCK",
             "reason": "règles déclenchées : forward_all_mails, hidden_instruction_marker, send_to_address ; éléments retirés : html_comment ; mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-2",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -229,8 +271,37 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
         },
         {
           "name": "Moteur de décision",
-          "status": "SKIPPED",
-          "verdict": null
+          "status": "DONE",
+          "verdict": {
+            "module": "ENGINE",
+            "attackType": "indirect_injection",
+            "score": 0.98,
+            "riskLevel": "high",
+            "decision": "BLOCK",
+            "reason": "[T.block] score 0.98 ≥ seuil de blocage 0.90 : règles déclenchées : forward_all_mails, hidden_instruction_marker, send_to_address ; éléments retirés : html_comment ; mode dégradé : règles seules",
+            "correlationId": "mock-scenario-2",
+            "degraded": true,
+            "metadata": {
+              "stage": "tool_result",
+              "rule": "T.block",
+              "escalated": false,
+              "canary": false,
+              "flags": [
+                "rule=T.block"
+              ],
+              "contributions": [
+                {
+                  "module": "B",
+                  "decision": "BLOCK",
+                  "rule": "T.block",
+                  "rules": [
+                    "T.block"
+                  ]
+                }
+              ],
+              "policy": "cdff6f5a420d"
+            }
+          }
         },
         {
           "name": "Réponse finale",
@@ -242,7 +313,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "aucune donnée sensible détectée ; mode dégradé : pas de détection de noms (Presidio absent)",
-            "correlationId": null,
+            "correlationId": "mock-scenario-2",
             "degraded": true,
             "metadata": {
               "canary": false,
@@ -310,7 +381,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-3",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -336,11 +407,24 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
           "verdict": {
             "module": "C",
             "attackType": "none",
-            "score": 0.1,
+            "score": 0.0,
             "riskLevel": "low",
             "decision": "ALLOW",
-            "reason": "outil autorisé (verdict de démonstration)",
-            "degraded": true
+            "reason": "outil autorisé, paramètres conformes",
+            "correlationId": "mock-scenario-3",
+            "degraded": true,
+            "metadata": {
+              "tool": "read_file",
+              "toolRisk": "low",
+              "findings": [],
+              "coherence": {
+                "score": 0.4176,
+                "method": "tfidf-lexical",
+                "semantic": false,
+                "threshold": 0.1,
+                "coherent": true
+              }
+            }
           }
         },
         {
@@ -353,7 +437,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-3",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -371,8 +455,38 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
         },
         {
           "name": "Moteur de décision",
-          "status": "SKIPPED",
-          "verdict": null
+          "status": "DONE",
+          "verdict": {
+            "module": "ENGINE",
+            "attackType": "data_leak",
+            "score": 1.0,
+            "riskLevel": "high",
+            "decision": "SANITIZE",
+            "reason": "[S.canary_in_response] canary signalé : fuite avérée ; donnée sensible dans la sortie (canary)",
+            "correlationId": "mock-scenario-3",
+            "degraded": true,
+            "metadata": {
+              "stage": "final_response",
+              "rule": "S.canary_in_response",
+              "escalated": false,
+              "canary": true,
+              "flags": [
+                "rule=S.canary_in_response",
+                "canary"
+              ],
+              "contributions": [
+                {
+                  "module": "D",
+                  "decision": "SANITIZE",
+                  "rule": "S.canary_in_response",
+                  "rules": [
+                    "S.canary_in_response"
+                  ]
+                }
+              ],
+              "policy": "cdff6f5a420d"
+            }
+          }
         },
         {
           "name": "Réponse finale",
@@ -384,7 +498,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "high",
             "decision": "SANITIZE",
             "reason": "données sensibles détectées : canary ×1 (canary token : fuite avérée) ; mode dégradé : pas de détection de noms (Presidio absent)",
-            "correlationId": null,
+            "correlationId": "mock-scenario-3",
             "degraded": true,
             "metadata": {
               "canary": true,
@@ -460,7 +574,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-4",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -486,11 +600,33 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
           "verdict": {
             "module": "C",
             "attackType": "tool_abuse",
-            "score": 0.9,
+            "score": 0.5,
             "riskLevel": "high",
             "decision": "CONFIRM",
-            "reason": "outil à risque élevé (verdict de démonstration)",
-            "degraded": true
+            "reason": "chemin sensible ou fichier marqué important; outil à risque high : confirmation exigée par la politique",
+            "correlationId": "mock-scenario-4",
+            "degraded": true,
+            "metadata": {
+              "tool": "delete_file",
+              "toolRisk": "high",
+              "findings": [
+                {
+                  "kind": "sensitive_path",
+                  "detail": "chemin sensible ou fichier marqué important"
+                },
+                {
+                  "kind": "requires_confirmation",
+                  "detail": "outil à risque high : confirmation exigée par la politique"
+                }
+              ],
+              "coherence": {
+                "score": 0.5671,
+                "method": "tfidf-lexical",
+                "semantic": false,
+                "threshold": 0.1,
+                "coherent": true
+              }
+            }
           }
         },
         {
@@ -500,8 +636,46 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
         },
         {
           "name": "Moteur de décision",
-          "status": "SKIPPED",
-          "verdict": null
+          "status": "DONE",
+          "verdict": {
+            "module": "ENGINE",
+            "attackType": "tool_abuse",
+            "score": 0.5,
+            "riskLevel": "high",
+            "decision": "CONFIRM",
+            "reason": "[P2.sensitive_path] chemin sensible ou fichier marqué important; outil à risque high : confirmation exigée par la politique",
+            "correlationId": "mock-scenario-4",
+            "degraded": true,
+            "metadata": {
+              "stage": "tool_call",
+              "rule": "P2.sensitive_path",
+              "escalated": false,
+              "canary": false,
+              "flags": [
+                "rule=P2.sensitive_path"
+              ],
+              "contributions": [
+                {
+                  "module": "C",
+                  "decision": "CONFIRM",
+                  "rule": "P2.sensitive_path",
+                  "rules": [
+                    "P2.sensitive_path",
+                    "P2.requires_confirmation"
+                  ]
+                },
+                {
+                  "module": "D",
+                  "decision": "ALLOW",
+                  "rule": "A.args_clean",
+                  "rules": [
+                    "A.args_clean"
+                  ]
+                }
+              ],
+              "policy": "cdff6f5a420d"
+            }
+          }
         },
         {
           "name": "Réponse finale",
@@ -513,7 +687,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "aucune donnée sensible détectée ; mode dégradé : pas de détection de noms (Presidio absent)",
-            "correlationId": null,
+            "correlationId": "mock-scenario-4",
             "degraded": true,
             "metadata": {
               "canary": false,
@@ -581,7 +755,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-5",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -607,11 +781,24 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
           "verdict": {
             "module": "C",
             "attackType": "none",
-            "score": 0.1,
+            "score": 0.0,
             "riskLevel": "low",
             "decision": "ALLOW",
-            "reason": "outil autorisé (verdict de démonstration)",
-            "degraded": true
+            "reason": "outil autorisé, paramètres conformes",
+            "correlationId": "mock-scenario-5",
+            "degraded": true,
+            "metadata": {
+              "tool": "read_email",
+              "toolRisk": "low",
+              "findings": [],
+              "coherence": {
+                "score": 0.1977,
+                "method": "tfidf-lexical",
+                "semantic": false,
+                "threshold": 0.1,
+                "coherent": true
+              }
+            }
           }
         },
         {
@@ -624,7 +811,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "mode dégradé : règles seules",
-            "correlationId": null,
+            "correlationId": "mock-scenario-5",
             "degraded": true,
             "metadata": {
               "rules": [],
@@ -642,8 +829,37 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
         },
         {
           "name": "Moteur de décision",
-          "status": "SKIPPED",
-          "verdict": null
+          "status": "DONE",
+          "verdict": {
+            "module": "ENGINE",
+            "attackType": "none",
+            "score": 0.0,
+            "riskLevel": "low",
+            "decision": "ALLOW",
+            "reason": "[A.below_review] score 0.00 sous le seuil de revue",
+            "correlationId": "mock-scenario-5",
+            "degraded": true,
+            "metadata": {
+              "stage": "input",
+              "rule": "A.below_review",
+              "escalated": false,
+              "canary": false,
+              "flags": [
+                "rule=A.below_review"
+              ],
+              "contributions": [
+                {
+                  "module": "A",
+                  "decision": "ALLOW",
+                  "rule": "A.below_review",
+                  "rules": [
+                    "A.below_review"
+                  ]
+                }
+              ],
+              "policy": "cdff6f5a420d"
+            }
+          }
         },
         {
           "name": "Réponse finale",
@@ -655,7 +871,7 @@ export const SIMULATION_FIXTURES: Record<string, { unprotected: SimulationRun; p
             "riskLevel": "low",
             "decision": "ALLOW",
             "reason": "aucune donnée sensible détectée ; mode dégradé : pas de détection de noms (Presidio absent)",
-            "correlationId": null,
+            "correlationId": "mock-scenario-5",
             "degraded": true,
             "metadata": {
               "canary": false,

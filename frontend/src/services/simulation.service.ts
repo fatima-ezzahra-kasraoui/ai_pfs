@@ -58,7 +58,7 @@ export interface SimulationAccepted {
  */
 export const PIPELINE_STEP_NAMES = ["Message utilisateur", "Décision de l'agent", "Appel d'outil", "Résultat d'outil", "Moteur de décision", "Réponse finale"] as const;
 
-export const MAX_POLLS = 120;
+export const MAX_POLLS = 1200;
 
 /**
  * TEMPORARY : le mock est actif tant que `/api/simulations/*` n'est pas branché (AS-S2-031). Il est désactivé en positionnant

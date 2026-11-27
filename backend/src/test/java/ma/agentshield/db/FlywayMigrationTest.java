@@ -18,7 +18,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** AS-S1-016 : la migration V1 s'applique sur une base VIDE et la base refuse les valeurs hors contrat. */
+/** AS-S1-016 : les migrations V1 et V2 s'appliquent sur une base VIDE et la base refuse les valeurs hors contrat. */
 @Testcontainers
 class FlywayMigrationTest {
 
@@ -32,7 +32,7 @@ class FlywayMigrationTest {
                 .load()
                 .migrate();
         assertThat(result.success).isTrue();
-        assertThat(result.migrationsExecuted).isEqualTo(1);
+        assertThat(result.migrationsExecuted).isEqualTo(2);
     }
 
     private static Connection connect() throws SQLException {

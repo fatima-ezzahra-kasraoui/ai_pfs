@@ -1,0 +1,20 @@
+# Opt-in local development only: grants AI service outbound network access.
+services:
+  ai-service:
+    environment:
+      AI_STUB: "false"
+      LLM_PROVIDER: openai_compatible
+      LLM_MODEL: ${OLLAMA_LLM_MODEL:-ministral-3:14b}
+      LLM_BASE_URL: ${OLLAMA_LLM_URL:-http://host.docker.internal:11434/v1}
+      LLM_TIMEOUT_S: ${LLM_TIMEOUT_S_LOCAL:-180}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1024}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-1}
+      COHERENCE_EMBEDDING_PROVIDER: ollama
+      COHERENCE_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+      COHERENCE_EMBEDDING_URL: ${OLLAMA_EMBEDDING_URL:-http://host.docker.internal:11434}
+      COHERENCE_EMBEDDING_TIMEOUT_S: ${COHERENCE_EMBEDDING_TIMEOUT_S:-120}
+      COHERENCE_LLM_JUDGE: "false"
+    networks: [internal, ollama_access]
+networks:
+  ollama_access: {}

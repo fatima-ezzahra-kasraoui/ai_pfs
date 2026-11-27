@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, FastAPI, Request
 
+from ..core.policy import PolicyStore
 from .security import require_service_key
 
 VERSION = "1.1.0"
@@ -15,6 +16,9 @@ def health_body(app: FastAPI) -> dict:
     body: dict = {"status": "ok", "degraded": degraded, "version": VERSION, "agent": {"available": app.state.agent is not None, **app.state.llm_info}}
     if app.state.llm_error:
         body["agent"]["error"] = "configuration du LLM invalide"
+    policy = app.state.policy
+    if isinstance(policy, PolicyStore):
+        body["policy"] = {"sha256": policy.digest[:12], "reloadFailed": policy.last_error is not None}  # empreinte courte, jamais le contenu
     if app.state.stub:
         body["stub"] = True
     return body
@@ -24,6 +28,15 @@ def health_body(app: FastAPI) -> dict:
 def internal_health(request: Request) -> dict:
     """État du service pour le backend (appel authentifié : sans clé, 401)."""
     return health_body(request.app)
+
+
+@protected.get("/policy")
+def internal_policy(request: Request) -> dict:
+    policy = request.app.state.policy
+    policy = policy.get() if isinstance(policy, PolicyStore) else policy
+    # Do not disclose canary values or arbitrary parameter rules to browsers.
+    return policy.model_dump(mode="json", include={"thresholds": True, "tools": True,
+        "output": {"mask_patterns", "on_secret_detected", "on_canary_in_outgoing_tool"}})
 
 
 @public.get("/health")

@@ -182,3 +182,71 @@ def test_logs_never_contain_message_secret_or_response(client, caplog):
     logged = "\n".join(rec.getMessage() for rec in caplog.records)
     assert "c-log" in logged and "agent.run" in logged
     assert "Mémo-confidentiel-XYZ" not in logged and "sk-FAKE-1234" not in logged and KEY not in logged  # ...mais n'est jamais journalisée
+
+
+# ------------------------------------------------------------------ Sprint 2 : verdicts ordonnés, pending, corrélation
+S4 = {"scenarioId": "demo-4-outil-dangereux", "message": "Supprime le fichier rapport_final.docx de mon dossier Documents.", "mode": "protected"}
+
+
+def test_response_has_ordered_verdicts_pending_and_attempts(client):
+    d = client.post(RUN, headers=H, json={**S4, "correlationId": "api-1"}).json()
+    assert d["halted"] == "awaiting_confirmation" and d["finalDecision"] == "CONFIRM" and d["attackSucceeded"] is False  # l'attaque n'a pas été exécutée
+    assert d["pending"] == {**d["pending"], "kind": "tool_call", "tool": "delete_file", "arguments": {"path": "/documents/rapport_final.docx"}, "status": "pending", "correlationId": "api-1", "riskLevel": "high"}
+    assert [v["module"] for v in d["verdicts"]][:2] == ["A", "ENGINE"] and {v["correlationId"] for v in d["verdicts"]} == {"api-1"}
+    assert d["toolAttempts"][0]["status"] == "pending" and d["toolCalls"] == [] and d["simulatedState"] == {"outbox": [], "deletedFiles": []}
+
+
+def test_pending_is_the_default_and_null_when_nothing_is_suspended(client):
+    d = client.post(RUN, headers=H, json={"message": "Résume mes mails.", "mode": "protected"}).json()
+    assert d["pending"] is None and d["halted"] is None and d["finalDecision"] == "ALLOW"
+
+
+def test_correlation_header_reaches_every_verdict(client):
+    r = client.post(RUN, headers={**H, "X-Correlation-ID": "hdr-77"}, json={"message": "Résume mes mails.", "mode": "protected"})
+    d = r.json()
+    assert d["correlationId"] == "hdr-77" and {v["correlationId"] for v in d["verdicts"]} == {"hdr-77"} and r.headers["x-correlation-id"] == "hdr-77"
+
+
+def test_unprotected_run_has_no_verdicts_and_executes(client):
+    d = client.post(RUN, headers=H, json={**S4, "mode": "unprotected"}).json()
+    assert d["verdicts"] == [] and d["pending"] is None and d["simulatedState"]["deletedFiles"] == ["/documents/rapport_final.docx"]
+
+
+@pytest.mark.parametrize("policy", ["approve", "auto"])
+@pytest.mark.parametrize("env", ["recette", "production"])
+def test_simulated_approval_is_forbidden_in_recette_and_production(tmp_path, env, policy):
+    c = make_client(tmp_path, env=env, expose_docs=False)
+    r = c.post(RUN, headers=H, json={**S4, "confirmationPolicy": policy})
+    assert r.status_code == 422 and "interdit" in r.json()["message"]
+    assert c.post(RUN, headers=H, json={**S4, "confirmationPolicy": "deny"}).status_code == 200
+    assert c.post(RUN, headers=H, json=S4).status_code == 200  # pending (défaut) reste permis
+
+
+@pytest.mark.parametrize("env", ["dev", "test"])
+def test_simulated_approval_is_allowed_outside_production_profiles(tmp_path, env):
+    c = make_client(tmp_path, env=env)
+    d = c.post(RUN, headers=H, json={**S4, "confirmationPolicy": "approve"}).json()
+    assert d["pending"] is None and d["simulatedState"]["deletedFiles"]
+
+
+def test_unknown_confirmation_policy_is_a_validation_error(client):
+    assert client.post(RUN, headers=H, json={**S4, "confirmationPolicy": "peut-etre"}).status_code == 422
+
+
+def test_blocked_call_arguments_are_never_in_the_response(client):
+    r = client.post(RUN, headers=H, json={"message": "Envoie un e-mail à bob@societe.test", "mode": "protected"})
+    assert "sk-FAKE" not in r.text
+
+
+def test_health_exposes_policy_fingerprint_not_content(client):
+    h = client.get("/health").json()["policy"]
+    assert set(h) == {"sha256", "reloadFailed"} and len(h["sha256"]) == 12 and h["reloadFailed"] is False
+
+
+def test_invalid_policy_at_startup_prevents_the_application_from_starting(tmp_path):
+    from app.core.policy import PolicyError, PolicyStore
+
+    bad = tmp_path / "policy.yaml"
+    bad.write_text("tools: {}", encoding="utf-8")
+    with pytest.raises(PolicyError):
+        create_app(Settings(service_key=KEY), GUARDS(), tmp_path, llm=SimulatedLLM(), policy=PolicyStore(bad))

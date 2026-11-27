@@ -163,7 +163,7 @@ def test_each_run_has_isolated_state():
 
 def test_ablation_configs_enable_expected_guards():
     o = run("demo-1-injection-directe", "abl_ab")
-    assert {e.module for e in o.events} == {"A"} and o.attack_succeeded is False
+    assert {e.module for e in o.events} == {"A", "ENGINE"} and o.attack_succeeded is False
     o = run("demo-4-outil-dangereux", "abl_a")  # sans C : l'action dangereuse n'est plus bloquée
     assert o.attack_succeeded is True
 

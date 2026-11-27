@@ -5,8 +5,8 @@ import { renderApp } from "../../test/utils";
 import { NAV_ITEMS } from "./navigation";
 
 describe("MainLayout", () => {
-  it("expose 7 routes protégées", () => {
-    expect(NAV_ITEMS).toHaveLength(7);
+  it("expose 17 routes protégées", () => {
+    expect(NAV_ITEMS).toHaveLength(17);
   });
 
   // « /lab » n'est plus un placeholder (AS-S1-024) : voir pages/AttackSimulation.test.tsx.
@@ -16,7 +16,7 @@ describe("MainLayout", () => {
   ])("la route %s est accessible", async (path, title) => {
     renderApp(path, {});
     expect(await screen.findByRole("heading", { name: title })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Cette page sera disponible");
+    expect(screen.getByText(/Illustrative interface/)).toBeInTheDocument();
   });
 
   it("la Sidebar liste chaque section et le lien actif est marqué", async () => {

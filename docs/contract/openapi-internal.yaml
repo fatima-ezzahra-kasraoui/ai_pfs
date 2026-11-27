@@ -64,6 +64,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Health" }
+  /internal/policy:
+    get:
+      tags: [technique]
+      operationId: getInternalPolicy
+      summary: Politique de securite active pour le backend
+      responses:
+        "200":
+          description: Politique active sans valeurs confidentielles des canaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [thresholds, tools, output]
+                properties:
+                  thresholds:
+                    type: object
+                    additionalProperties: true
+                  tools:
+                    type: object
+                    additionalProperties: true
+                  output:
+                    type: object
+                    additionalProperties: true
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /internal/security/analyze:
     post:
       tags: [security]
@@ -114,11 +138,16 @@ paths:
       summary: "Lance l'agent (outils factices) sur un message, avec ou sans protection AgentShield"
       description: |
         Exécution synchrone et bornée (`AGENT_MAX_STEPS` appels LLM au plus). Les cinq outils sont simulés : aucune
-        suppression, aucun envoi, aucun accès réseau réel. En mode protégé, chaque message, appel d'outil, contenu
-        d'outil et réponse finale traverse les guards (aucun chemin ne les contourne).
+        suppression, aucun envoi, aucun accès réseau réel. En mode protégé, chaque message (Guard A), appel d'outil (Guard C, D),
+        retour d'outil (Guard B) et réponse finale (Guard D) traverse les guards PUIS le moteur de décision (aucun chemin ne les
+        contourne) ; `verdicts` renvoie la liste ordonnée des verdicts (un verdict `ENGINE` par étape, portant la décision), tous avec le
+        même `correlationId` (celui fourni, sinon `runId`). Aucun outil n'est exécuté avant la décision ; une action BLOQUÉE ou en
+        ATTENTE de confirmation n'est jamais exécutée. Si les guards ou le moteur sont indisponibles, l'étape est BLOQUÉE (échec fermé).
 
-        Une décision `CONFIRM` est tranchée par `confirmationPolicy` (pas de validation humaine interactive au Sprint 1) :
-        `deny` (défaut, sûr), `approve`, ou `auto` (humain simulé du banc : refuse si un `attackGoal` est fourni, approuve sinon).
+        **CONFIRM (AS-S2-017)** : par défaut (`confirmationPolicy: pending`), l'exécution est suspendue (`halted: awaiting_confirmation`)
+        et `pending` décrit l'action en attente avec ses paramètres EXACTS ; le service ne conserve aucun état (la reprise relève du backend,
+        AS-S3-002). `deny` refuse l'action et poursuit ; `approve` et `auto` SIMULENT une approbation pour les bancs d'essai (`auto` : refuse
+        si un `attackGoal` est fourni, approuve sinon) et sont refusés (422) en recette et en production.
 
         `attackSucceeded` / `taskSucceeded` ne sont renseignés que si un objectif est connu (`attackGoal`/`legitGoal` fournis, ou
         `scenarioId` d'un scénario de démonstration) ; sinon `null` (jamais de valeur devinée).
@@ -269,6 +298,12 @@ components:
             simulated: { type: boolean }
             error: { type: string }
         stub: { const: true, description: Présent uniquement sur le stub (AS-S1-010). }
+        policy:
+          type: object
+          description: "Politique de sécurité chargée (AS-S2-007) : empreinte courte, jamais le contenu."
+          properties:
+            sha256: { type: string }
+            reloadFailed: { type: boolean, description: "true : le dernier rechargement a échoué ; l'ancienne politique valide reste active." }
     Verdict:
       title: Verdict
       description: "Résultat d'un guard. Identique à docs/contract/verdict.schema.json (contrat v1.0)."
@@ -342,7 +377,7 @@ components:
           description: "e1 (sans protection), e3 (A+B+C+D), abl_a, abl_ab, abl_abc, abl_all. `e2` n'est pas géré par l'agent (422)."
         seed: { type: integer, minimum: 0, maximum: 2147483647 }
         correlationId: { type: string, maxLength: 128, pattern: "^[A-Za-z0-9._:-]+$" }
-        confirmationPolicy: { enum: [deny, approve, auto], default: deny }
+        confirmationPolicy: { enum: [pending, deny, approve, auto], default: pending, description: "pending : suspension sans exécution ; deny : refus ; approve/auto : simulation d'approbation (422 en recette/production)." }
         attackGoal: { $ref: "#/components/schemas/Goal" }
         legitGoal: { $ref: "#/components/schemas/Goal" }
     AgentEvent:
@@ -356,7 +391,7 @@ components:
         reason: { type: string }
         latencyMs: { type: number }
         verdict: { oneOf: [{ $ref: "#/components/schemas/Verdict" }, { type: "null" }], description: "Verdict du guard (A, B, D) ; null pour le Guard C de référence, qui ne produit pas de Verdict." }
-        confirmation: { enum: [approved, denied, null], description: "Issue d'une décision CONFIRM selon `confirmationPolicy` ; null sinon." }
+        confirmation: { enum: [approved, denied, pending, null], description: "Issue d'une décision CONFIRM selon `confirmationPolicy` ; null sinon." }
     ToolCallRecord:
       type: object
       required: [tool, args, output, simulated]
@@ -366,19 +401,43 @@ components:
         output: { type: object, additionalProperties: true }
         simulated: { const: true }
         sideEffect: { type: [string, "null"] }
+    PendingAction:
+      type: object
+      description: "Action suspendue en attente de confirmation. Format à valider avec É3 (AS-S2-028)."
+      required: [actionId, kind, riskLevel, reason, correlationId, status]
+      properties:
+        actionId: { type: string }
+        kind: { enum: [tool_call, message], description: "tool_call : appel d'outil ; message : message entrant en attente (bande de revue du Guard A)." }
+        tool: { oneOf: [{ $ref: "#/components/schemas/ToolName" }, { type: "null" }] }
+        arguments: { type: [object, "null"], additionalProperties: true, description: "Paramètres EXACTS demandés par l'agent (null pour kind=message)." }
+        riskLevel: { enum: [low, medium, high] }
+        reason: { type: string, description: "Règle(s) du moteur et raison de la confirmation." }
+        correlationId: { type: string }
+        status: { const: pending }
+    ToolAttempt:
+      type: object
+      required: [tool, status, executed]
+      properties:
+        tool: { type: string, description: "Nom demandé par le LLM (peut être inconnu : alors bloqué)." }
+        arguments: { type: [object, "null"], additionalProperties: true, description: "null pour un appel BLOQUÉ ou suspendu (ils pourraient contenir un secret)." }
+        decision: { enum: [ALLOW, SANITIZE, CONFIRM, BLOCK, null] }
+        status: { enum: [executed, blocked, refused, pending, error, skipped] }
+        executed: { type: boolean }
+        reason: { type: string }
+        rule: { type: [string, "null"], description: "Règle du moteur (ex. P1.tool_not_allowed, P2.requires_confirmation)." }
     AgentRunResponse:
       type: object
-      required: [runId, mode, config, response, finalDecision, confirmations, attackSucceeded, taskSucceeded, totalMs, steps, events, toolCalls, simulatedState, llm, agent]
+      required: [runId, mode, config, response, finalDecision, confirmations, attackSucceeded, taskSucceeded, totalMs, steps, events, toolCalls, simulatedState, verdicts, pending, toolAttempts, llm, agent]
       properties:
         runId: { type: string }
-        correlationId: { type: [string, "null"] }
+        correlationId: { type: [string, "null"], description: "Identifiant de corrélation de l'exécution : celui fourni (corps ou en-tête `X-Correlation-ID`), sinon `runId`. Partagé par tous les verdicts." }
         scenarioId: { type: [string, "null"] }
         mode: { enum: [protected, unprotected] }
         config: { type: string }
         seed: { type: [integer, "null"] }
         response: { type: string, description: "Réponse finale livrée à l'utilisateur (après protection)." }
         finalDecision: { enum: [ALLOW, SANITIZE, CONFIRM, BLOCK], description: "Décision la plus sévère rencontrée." }
-        halted: { enum: [input_blocked, max_steps, llm_error, null] }
+        halted: { enum: [input_blocked, awaiting_confirmation, max_steps, llm_error, null] }
         error: { type: [string, "null"], description: "Type d'erreur LLM (jamais son détail)." }
         confirmations: { type: integer, minimum: 0 }
         attackSucceeded: { type: [boolean, "null"] }
@@ -387,6 +446,9 @@ components:
         steps: { type: integer }
         events: { type: array, items: { $ref: "#/components/schemas/AgentEvent" } }
         toolCalls: { type: array, items: { $ref: "#/components/schemas/ToolCallRecord" }, description: "Appels d'outils effectivement exécutés (simulés)." }
+        verdicts: { type: array, items: { $ref: "#/components/schemas/Verdict" }, description: "Verdicts ordonnés (guards puis ENGINE, étape par étape), même correlationId. Vide sans protection." }
+        pending: { oneOf: [{ $ref: "#/components/schemas/PendingAction" }, { type: "null" }] }
+        toolAttempts: { type: array, items: { $ref: "#/components/schemas/ToolAttempt" }, description: "Tous les appels d'outils demandés par le LLM, exécutés ou non." }
         simulatedState:
           type: object
           required: [outbox, deletedFiles]

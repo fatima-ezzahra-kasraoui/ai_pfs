@@ -4,7 +4,7 @@ import { AsyncView } from "./AsyncView";
 
 const LABEL = { UP: "Disponible", DEGRADED: "Dégradé", DOWN: "Indisponible" } as const;
 
-/** État des services lu sur /api/system/health ; aucun statut codé en dur. */
+/** État des services lu sur /api/system/services ; aucun statut codé en dur. */
 export function ServiceStatus() {
   const { state, reload } = useAsync((s) => systemService.health(s));
   return (

@@ -69,7 +69,7 @@ def to_markdown(rows: list[list[str]], title: str, notes: list[str]) -> str:
 
 def to_csv(rows: list[list[str]]) -> str:
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = csv.writer(buf, lineterminator="\n")
     w.writerow(COLUMNS)
     w.writerows(rows)
     return buf.getvalue()

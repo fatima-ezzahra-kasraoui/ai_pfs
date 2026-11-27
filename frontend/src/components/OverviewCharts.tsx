@@ -1,9 +1,10 @@
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ATTACK_LABEL, DECISION_LABEL, SEVERITY_LABEL } from "../format";
 import type { Overview } from "../types";
 
 // Palette à contraste suffisant sur fond clair et sombre ; l'information n'est jamais portée par la couleur seule (légende + libellés).
-const COLORS = ["#2563eb", "#d97706", "#7c3aed", "#dc2626"];
+const COLORS = ["#6d4d91", "#a88bc4", "#c7afdd", "#e2d5ee"]
+const DECISION_COLORS: Record<string,string> = {ALLOW:"#287D46", SANITIZE:"#74619B", CONFIRM:"#B7791F", BLOCK:"#C24141"};
 
 function entries<K extends string>(obj: Partial<Record<K, number>>, labels: Record<string, string>) {
   return (Object.entries(obj) as [K, number][]).map(([key, value]) => ({ key, name: labels[key] ?? key, value }));
@@ -26,21 +27,21 @@ export function OverviewCharts({ data }: { data: Overview }) {
     <div className="grid charts">
       <ChartBox title="Attaques dans le temps" empty={data.attacksOverTime.length === 0}>
         <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={data.attacksOverTime}>
+          <AreaChart data={data.attacksOverTime}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line type="monotone" dataKey="count" name="Attaques" stroke={COLORS[0]} strokeWidth={2} dot={false} />
-          </LineChart>
+            <Area fill="#a88bc4" fillOpacity={0.22} type="monotone" dataKey="count" name="Attaques" stroke={COLORS[0]} strokeWidth={2} dot={false} />
+          </AreaChart>
         </ResponsiveContainer>
       </ChartBox>
       <ChartBox title="Répartition des décisions" empty={decisions.length === 0}>
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
-            <Pie data={decisions} dataKey="value" nameKey="name" outerRadius={80} label>
+            <Pie data={decisions} dataKey="value" nameKey="name" innerRadius={48} outerRadius={75}>
               {decisions.map((d, i) => (
-                <Cell key={d.key} fill={COLORS[i % COLORS.length]} />
+                <Cell key={d.key} fill={DECISION_COLORS[d.key] ?? COLORS[i % COLORS.length]} />
               ))}
             </Pie>
             <Legend />

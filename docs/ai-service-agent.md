@@ -1,20 +1,18 @@
-# Service IA : agent, outils, LLM, stub (Sprint 1, É2)
+# Service IA : agent, outils, LLM, stub (Sprint 1, É2 ; interception au Sprint 2 : voir ai-service-engine.md)
 
 ## Vue d'ensemble
 
 ```
 POST /internal/agent/run ──► AgentService ──► graphe LangGraph
                                                input_guard → plan(LLM) ⇄ act(outils) → final_guard
-                                               │ hooks : Guard A │          │ C + D │ puis B │   D
+                                               │ A + moteur │       │ C + D + moteur, puis B + moteur │  D + moteur
 ```
 
 * **Aucun contournement** : en mode protégé, les quatre points de contrôle (message, appel d'outil, contenu d'outil,
   réponse finale) sont toujours traversés (test `test_flow_always_traverses_every_hook_in_order`).
-* **Les guards ne décident pas** : `ReferenceHooks` traduit leurs `Verdict` en ALLOW / SANITIZE / CONFIRM / BLOCK.
-  Cette traduction est **TEMPORAIRE** : elle réutilise `evaluation.sim.pipeline.ReferencePipeline` (seuils de `policy.yaml`,
-  Guard C minimal). Le vrai Guard C et le moteur de décision (Sprint 2) s'y branchent en implémentant `SecurityHooks`.
-* **CONFIRM** : pas d'humain en ligne au Sprint 1. `confirmationPolicy` : `deny` (défaut), `approve`, `auto`
-  (humain simulé : refuse si un `attackGoal` est connu, approuve sinon).
+* **Les guards ne décident pas** : `EngineHooks` réunit les verdicts des guards A, B, C, D et le **moteur de décision** (`core/engine.py`) produit
+  ALLOW / SANITIZE / CONFIRM / BLOCK à partir de `policy.yaml` (Sprint 2). Détails, table de décision, état `pending` et limites : `docs/ai-service-engine.md`.
+* **CONFIRM** : `confirmationPolicy` `pending` (défaut : l'action est suspendue, rien n'est exécuté), `deny`, `approve`/`auto` (simulation d'approbation des bancs d'essai, interdite en recette et en production).
 
 ## Outils factices (`app/agent/tools.py`)
 

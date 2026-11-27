@@ -151,6 +151,39 @@ def test_agent_run_response_conforms_for_every_scenario(client, sid, mode):
     check("AgentRunResponse", r.json())
 
 
+def test_pending_response_and_sprint2_fields_conform(client):
+    """Réponse avec action suspendue (pending), verdicts ordonnés et tentatives d'outils."""
+    body = {"scenarioId": "scenario-4", "message": "Supprime le fichier rapport_final.docx de mon dossier Documents.", "mode": "protected", "correlationId": "c-2"}
+    check("AgentRunRequest", body)
+    r = client.post("/internal/agent/run", headers=H, json=body)
+    assert r.status_code == 200
+    check("AgentRunResponse", r.json())
+    assert r.json()["pending"]["status"] == "pending" and r.json()["halted"] == "awaiting_confirmation"
+    check("PendingAction", r.json()["pending"])
+    for attempt in r.json()["toolAttempts"]:
+        check("ToolAttempt", attempt)
+
+
+@pytest.mark.parametrize("policy", ["pending", "deny", "approve", "auto"])
+def test_every_confirmation_policy_gives_a_conform_response(client, policy):
+    r = client.post("/internal/agent/run", headers=H, json={"message": "Supprime le fichier notes.txt", "mode": "protected", "confirmationPolicy": policy})
+    check("AgentRunResponse", r.json())
+
+
+def test_message_pending_conforms(tmp_path):
+    from tests.test_agent_interception import Stub
+
+    guards = {"A": Stub("A", score=0.6), "B": ContentGuard(), "D": OutputGuard()}
+    c = TestClient(create_app(Settings(service_key=KEY), guards, tmp_path, llm=SimulatedLLM()))
+    r = c.post("/internal/agent/run", headers=H, json={"message": "message ambigu", "mode": "protected"})
+    check("AgentRunResponse", r.json())
+    assert r.json()["pending"]["kind"] == "message"
+
+
+def test_health_policy_object_conforms(client):
+    check("Health", client.get("/health").json())
+
+
 def test_documented_example_is_valid_and_accepted(client):
     example = SPEC["paths"]["/internal/agent/run"]["post"]["requestBody"]["content"]["application/json"]["examples"]["injectionIndirecte"]["value"]
     check("AgentRunRequest", example)
