@@ -89,7 +89,15 @@ def to_run(mode, outcome, attack_expected):
 
 def render() -> str:
     """Contenu complet du fichier de fixtures (déterministe : LLM simulé, graine fixe)."""
-    svc = AgentService(SimulatedLLM(), security.build_guards())
+    # Deterministic demo fixtures, independent of optional local ML models.
+    from unittest.mock import patch
+
+    with patch("app.guards.classifier.load_classifier", return_value=None), patch(
+        "app.guards.output_guard.try_load_presidio", return_value=None
+    ):
+        guards = security.build_guards()
+
+    svc = AgentService(SimulatedLLM(), guards)
     catalog = demo_catalog()
     fixtures = {}
     for sid, (demo, message) in SCENARIOS.items():

@@ -114,7 +114,6 @@ class PresidioDetector:
 
     def __init__(self, languages: tuple[str, ...] = ("en", "fr")) -> None:
         from presidio_analyzer import AnalyzerEngine  # import paresseux
-
         from presidio_analyzer.nlp_engine import NlpEngineProvider
 
         configuration = {

@@ -64,6 +64,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Health" }
+  /internal/policy:
+    get:
+      tags: [technique]
+      operationId: getInternalPolicy
+      summary: Politique de securite active pour le backend
+      responses:
+        "200":
+          description: Politique active sans valeurs confidentielles des canaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [thresholds, tools, output]
+                properties:
+                  thresholds:
+                    type: object
+                    additionalProperties: true
+                  tools:
+                    type: object
+                    additionalProperties: true
+                  output:
+                    type: object
+                    additionalProperties: true
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /internal/security/analyze:
     post:
       tags: [security]

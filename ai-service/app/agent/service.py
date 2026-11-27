@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import os
-from .real_tools import RealToolBox
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -16,6 +15,7 @@ from ..guards.tool_guard import ToolGuard
 from ..llm.client import LLMClient
 from .graph import SYSTEM_PROMPT, RunContext, build_graph
 from .hooks import EngineHooks, PassthroughHooks, SecurityHooks
+from .real_tools import RealToolBox
 from .state import Event, worst
 from .tools import CANARY_SECRET, ToolBox, normalize_path
 

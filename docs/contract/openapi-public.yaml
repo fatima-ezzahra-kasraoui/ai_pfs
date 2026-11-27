@@ -376,6 +376,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SystemHealth" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
 components:
   securitySchemes:

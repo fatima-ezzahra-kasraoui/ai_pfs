@@ -127,7 +127,7 @@ def test_unknown_recipient_goes_to_pending_not_to_the_outbox():
 
 def test_sanitized_arguments_are_what_the_tool_receives():
     """Un secret dans les arguments (clé API) est masqué par le moteur : l'outil reçoit la version nettoyée, jamais l'originale."""
-    secret = "sk-abcdefghijklmnopqrstuvwxyz123456"
+    secret = "sk-" + "a" * 32  # Synthetic test credential
     _, o = run(ScriptedLLM([calls(("send_email", {"to": "bob@societe.test", "subject": "s", "body": f"clé {secret}"})), LLMResponse(text="fin")]), message="Envoie un e-mail à bob@societe.test")
     a = o.attempts[0]
     assert a["decision"] == "SANITIZE" and a["status"] == "executed" and a["rule"] == "S.secret_masked"
