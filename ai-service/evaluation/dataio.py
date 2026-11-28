@@ -36,3 +36,21 @@ def load_split(name: str, data_dir: Path = DATA_DIR) -> list[Example]:
 
 def load_manifest(data_dir: Path = DATA_DIR) -> dict:
     return json.loads((data_dir / "manifest.json").read_text(encoding="utf-8"))
+
+
+EXTRA_DIR = DATA_DIR / "extra"
+
+
+def load_extra(name: str) -> list[Example]:
+    """Jeu complémentaire FR/EN (``extra_train`` | ``extra_eval``), généré par ``evaluation.build_extra``."""
+    if name not in ("extra_train", "extra_eval"):
+        raise ValueError(f"jeu complémentaire inconnu : {name!r}")
+    path = EXTRA_DIR / f"{name}.jsonl"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} introuvable : lancer `python -m evaluation.build_extra`")
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            d = json.loads(line)
+            out.append(Example(d["id"], d["text"], int(d["label"]), d["source"], d.get("lang", "fr"), name))
+    return out
