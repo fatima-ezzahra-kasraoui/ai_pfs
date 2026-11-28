@@ -23,6 +23,9 @@ log = logging.getLogger("agentshield.classifier")
 DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "models_cache" / "guard_a_tfidf.joblib"
 
 
+BEST_MODEL_PATH = Path(os.environ.get("GUARD_A_BEST_PATH", Path(__file__).resolve().parents[2] / "models_cache" / "guard_a_best.joblib"))
+
+
 class Classifier(Protocol):
     name: str
 
@@ -79,6 +82,35 @@ class TfidfClassifier:
         return cls(joblib.load(path))
 
 
+class SklearnTextClassifier:
+    """Classifieur scikit-learn quelconque (pipeline texte -> probabilité) : sert aux candidats du zoo de modèles."""
+
+    def __init__(self, name: str, pipeline) -> None:  # noqa: ANN001
+        self.name = name
+        self._pipeline = pipeline
+
+    def predict_proba(self, texts: Sequence[str]) -> list[float]:
+        if not texts:
+            return []
+        probs = self._pipeline.predict_proba(list(texts))
+        positive = list(self._pipeline.classes_).index(1)
+        return [float(p[positive]) for p in probs]
+
+    def save(self, path: Path) -> Path:
+        import joblib
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump({"name": self.name, "pipeline": self._pipeline}, path)
+        return path
+
+    @classmethod
+    def load(cls, path: Path) -> SklearnTextClassifier:
+        import joblib
+
+        d = joblib.load(path)
+        return cls(d["name"], d["pipeline"])
+
+
 class HFClassifier:
     """Enveloppe d'un modèle Hugging Face de classification de texte."""
 
@@ -120,6 +152,12 @@ def load_classifier() -> Classifier | None:
             return HFClassifier(model_name, device=os.environ.get("GUARD_A_DEVICE", "cpu"))
         except Exception as exc:  # noqa: BLE001 - toute panne => repli, jamais un crash
             log.warning("Modèle HF %s indisponible (%s) : repli", model_name, exc)
+    best = BEST_MODEL_PATH
+    if best.exists():  # meilleur modèle retenu par ``python -m evaluation.select_best_model``
+        try:
+            return SklearnTextClassifier.load(best)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Meilleur modèle illisible (%s) : repli sur TF-IDF", exc)
     path = Path(os.environ.get("GUARD_A_TFIDF_PATH", DEFAULT_MODEL_PATH))
     if path.exists():
         try:
