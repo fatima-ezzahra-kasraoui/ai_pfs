@@ -32,7 +32,7 @@ from .results import RESULTS_DIR
 
 def calibrate_threshold(scores: list[float], labels: list[int], max_fpr: float, floor: float = 0.30) -> float:
     """Plus petit seuil (>= ``floor``) dont le FPR <= ``max_fpr`` ; maximise donc le rappel à FPR borné."""
-    neg = sorted(s for s, y in zip(scores, labels) if y == 0)
+    neg = sorted(s for s, y in zip(scores, labels, strict=True) if y == 0)
     cands = sorted({round(s, 4) for s in scores} | {0.5})
     for t in cands:
         if t < floor:
@@ -49,7 +49,7 @@ def oof_scores(name: str, texts: list[str], labels: list[int], seed: int) -> lis
     out = [0.0] * len(texts)
     for tr, te in StratifiedKFold(5, shuffle=True, random_state=seed).split(texts, labels):
         m = train_sklearn(name, [texts[i] for i in tr], [labels[i] for i in tr], seed)
-        for i, p in zip(te, m.predict_proba([texts[i] for i in te])):
+        for i, p in zip(te, m.predict_proba([texts[i] for i in te]), strict=True):
             out[i] = p
     return out
 

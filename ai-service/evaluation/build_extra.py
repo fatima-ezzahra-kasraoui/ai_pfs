@@ -11,10 +11,8 @@ Données synthétiques à relire : ``python -m evaluation.build_extra``.
 """
 from __future__ import annotations
 
-import itertools
 import json
 import random
-from pathlib import Path
 
 from app.core.text import fold, normalize
 
