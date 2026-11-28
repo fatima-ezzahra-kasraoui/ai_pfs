@@ -78,7 +78,7 @@ class RealToolBox(ToolBox):
             raise ToolError("Only simple file names permitted")
         if Path(name).suffix.lower() not in {".txt", ".csv", ".json", ".md", ".pdf"}:
             raise ToolError("Unsupported file format")
-        fd = os.open(ROOT / name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        fd = os.open(ROOT / name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
         with os.fdopen(fd, "rb") as f:
             info = os.fstat(f.fileno())
             if not stat.S_ISREG(info.st_mode) or info.st_size > MAX or info.st_nlink != 1:
