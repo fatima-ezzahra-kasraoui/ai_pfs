@@ -39,7 +39,7 @@ def test_regression_never_reads_test_split():
 def test_update_writes_baseline(tmp_path):
     path = tmp_path / "base.json"
     assert rr.main(["--update", "--baseline", str(path)]) == 0
-    assert json.loads(path.read_text())["cases"]
+    assert json.loads(path.read_text(encoding="utf-8"))["cases"]
     assert rr.main(["--baseline", str(path)]) == 0
 
 
@@ -77,9 +77,9 @@ def test_block_never_below_floor_nor_too_close_to_review():
 
 def test_update_policy_rewrites_only_thresholds(tmp_path):
     p = tmp_path / "policy.yaml"
-    p.write_text("thresholds:                  # TEMPORARY\n  injection_block: 0.90\n  injection_review: 0.50\n  coherence_min: 0.40\noutput:\n  canary_tokens: [sk-FAKE-1234]\n")
+    p.write_text("thresholds:                  # TEMPORARY\n  injection_block: 0.90\n  injection_review: 0.50\n  coherence_min: 0.40\noutput:\n  canary_tokens: [sk-FAKE-1234]\n", encoding="utf-8")
     tt.update_policy(p, {"injection_block": 0.85, "injection_review": 0.45, "coherence_min": 0.4})
-    text = p.read_text()
+    text = p.read_text(encoding="utf-8")
     assert "injection_block: 0.85" in text and "injection_review: 0.45" in text and "GELÉS" in text and "sk-FAKE-1234" in text
 
 
